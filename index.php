@@ -1,6 +1,6 @@
 <?php
 
-require 'App/DB.php';
+require 'DB.php';
 
 DB::Config([
 	'debug' => true,
@@ -9,27 +9,11 @@ DB::Config([
 ]);
 DB::init('localhost', 'tester', 'root', '');
 
-/*
-insert
-$test = new DB('Product');
-$test->title = 'hey';
-$test->price = 20.33;
-$test->date = date('Y-m-d');
-$test->save();
-*/
-
-/*
-update
-$test = new DB('Product');
-$test->title = 'Shoes';
-$test->price = 233.6;
-
-$test->update([
-	'id' => 1
-]);
-*/
-
-//select
-$test = new DB('Product');
-$test->where(['id' => 1])->select();
-var_dump( $test->all);
+//create table
+$test = new DB('Shop');
+$test->int('id', null, null, true)->primary()
+	 ->varchar('fname', '255')
+	 ->varchar('lname', '255')
+	 ->varchar('email', '255')
+	 ->int('time')
+	 ->create();

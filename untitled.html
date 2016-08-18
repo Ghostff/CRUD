@@ -1,0 +1,17 @@
+$test = new DB('Product');
+$test->title = 'hey';
+$test->price = 20.33;
+$test->date = date('Y-m-d');
+$test->save();
+
+
+//update
+$test = new DB('Product');
+$test->title = 'Update Shoes';
+$test->price = '44.3';
+$test->where(['price' => 44.3])->update();
+
+//select
+$test = new DB('Product');
+$test->select();
+echo $test->price;
