@@ -22,7 +22,7 @@ $query->into('title, price, date')
 Method 3:  
 ```php
 $query = new Query\Insert;
-$query->query('INSERT INTO Product (title, price, date) 
-			   VALUES ('Shirt', '2.55', '2016-08-20 00:00:00')'
+$query->query("INSERT INTO Product (title, price, date) 
+			   VALUES ('Shirt', '2.55', '2016-08-20 00:00:00')"
 );
 ```
