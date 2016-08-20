@@ -1,19 +1,17 @@
 <?php
 
-require 'DB.php';
+use PDOConnection\DB as DB;
 
+require 'DB.php';
+    
 DB::Config([
-	'debug' => true,
-	'forceDB' => true,
-	'forcTable' => true
+    'debug' => true,
+    'forceDB' => false,
+    'forcTable' => false
 ]);
 DB::init('localhost', 'tester', 'root', '');
 
-//create table
-$test = new DB('Shop');
-$test->int('id', null, null, true)->primary()
-	 ->varchar('fname', '255')
-	 ->varchar('lname', '255')
-	 ->varchar('email', '255')
-	 ->int('time')
-	 ->create();
+$query = new Query\Insert('Product');
+$query->title = 'Shirt';
+$query->price = 2.55;
+$query->date = date('Y-m-d');

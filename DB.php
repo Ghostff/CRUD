@@ -1,295 +1,283 @@
 <?php
 
-class DB
-{	
-	private $table = null;
-	
-	private $where = null;
-	
-	private $limit = null;
-	
-	private $order = null;
-	
-	private $result = null;
-	
-	private $datas = array();
-	
-	private $selected = null;
-	
-	private $were_data = null;
-	
-	private $primary_key = null;
-	
-	private static $conn = null;
-	
-	private $new_table = array();
-	
-	private static $debug = false;
-	
-	private $forein_keys = array();
-	
-	private $engine_name = 'InnoDB';
-	
-	private static $force_DB = false;
-	
-	private static $force_table = false;
-	
-	
-	public static function init($host, $DBName, $username, $password)
-	{
-		$pdo = new PDO('mysql:host=' . $host, $username, $password);
-		if (self::$debug) {
-			$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-		}
-		if (self::$force_DB) {
-			$pdo->query('CREATE DATABASE IF NOT EXISTS ' . $DBName);
-		}
-		$pdo->query('USE ' . $DBName);
-		self::$conn = $pdo;
-		
-	}
-	
-	public static function Config($attribute)
-	{
-		if (is_array($attribute)) {
-			if (array_key_exists('debug', $attribute)) {
-				self::$debug = $attribute['debug'];	
-			}
-			if (array_key_exists('forceDB', $attribute)) {
-				self::$force_DB = $attribute['forceDB'];	
-			}
-			if (array_key_exists('forceRow', $attribute)) {
-				self::$force_table = $attribute['forceRow'];	
-			}
-		}
-	}
-	
-	public function __construct($tableName)
-	{
-		$this->table = $tableName;
-	}
-	
-	public function create()
-	{
-		$create = 'CREATE TABLE IF NOT EXISTS `'
-			. $this->table . '` (';
-			
-		foreach ($this->new_table as $keys => $value) {
-			$create .= '`' . $value['name'] . '` '
-				. strtoupper($value['type']);
-				
-			if ($value['length'] != null) {
-				$create .= '(' . $value['length'] . ')';
-			}
-			if ($value['null'] == true) {
-				$create .= ' NULL';
-			} else {
-				$create .= ' NOT NULL';
-			}
-			if ($value['AI'] == true) {
-				$create .= ' AUTO_INCREMENT';
-			}
-			$create .= ',';
-		}
-		if ($this->primary_key) {
-			$create .= ' PRIMARY KEY (' . $this->primary_key . ')';
-		}
-		if ($this->forein_keys) {
-			foreach ($this->forein_keys as $names) {
-				$create .=  ' FOREIGN KEY (' . $names . '),';
-			}
-			$create = rtrim($create, ',');
-		}
-		$create .= ') ENGINE=' . $this->engine_name . ';';
-		
-		var_dump($create);
-		if (self::$conn->exec($create)) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-	
-	public function engine($engineName)
-	{
-		$this->engine_name = $engineName;
-		return $this;
-	}
-	
-	public function forein()
-	{
-		$last = array_keys($this->new_table);
-		$last = end($last);
-		
-		$this->forein_keys[] = $this->new_table[$last]['name'];
-		
-		return $this;
-	}
-	
-	public function primary()
-	{
-		$last = array_keys($this->new_table);
-		$last = end($last);
-		
-		$this->primary_key = $this->new_table[$last]['name'];
-		
-		return $this;
-	}
-	
-	public function save()
-	{
-		$rows = rtrim(
-			implode(', ', array_keys($this->datas)),
-			', '
-		);
-		$mod = ':' . str_replace(', ', ', :', $rows);
-		
-		$query = self::$conn->prepare(
-			'INSERT INTO ' . $this->table . '
-				('. $rows . ')
-			 VALUES 
-				(' . $mod . ')');
-		if ($query->execute($this->datas)) {
-			return $query->rowCount();
-		} else {
-			return false;
-		}
-	}
-	
-	public function update()
-	{
-		$set = implode(', ', 
-			array_map($sort = function ($row) {
-				return $row . ' = :' . $row;
-			}, array_keys($this->datas))
-		);
-		
-		$data =& $this->were_data;
-		$array = array_map(function($value) use (&$data) { 
-			$data[':' . $value] = $data[$value];
-			unset($data[$value]);
-		}, array_keys($this->were_data));
-		
-		$this->datas = array_merge($this->datas, $this->were_data);
-		$query = self::$conn->prepare('
-			UPDATE ' . $this->table
-			. ' SET ' . $set . $this->where
-		);
-		
-		if ($query->execute($this->datas)){
-			return $query->rowCount();
-		} else {
-			return false;
-		}
+/*
+*  Custom Exception handling;
+*/
+namespace Exception {
+    
+    class DBException
+    {
+        /*
+        * outputs customized exception
+        * return null
+        *
+        * @param php Exception object
+        */
+        public static function init($exception)
+        {
+            $line = $exception->getLine();
+            $line -= 1;
+            $file = file($exception->getFile());
+        
+            $err_top = $err_bottom = null;
+            for ($i = 1, $k = 5; $i <= 5; $i++, $k--) {
+                $current = $line - $k;
+                if (isset($file[$current])) {
+                    $err_top .= $current + 1 .' ' . $file[$current];
+                }
+                $current = $line + $i;
+                if (isset($file[$current])) {
+                    $err_bottom .= $current + 1  .' ' .  $file[$current];
+                }
+            }
+            
+            $new_line = $line+1;
+            $current = '``@~~' . $new_line . $file[$line];
+            $error = $err_top . $current . $err_bottom;
+            
+            $error = highlight_string('<?php ' . $error, true);
+            
+            $error = preg_replace(
+                '#(``@~~)(.*?)<br\s*/>#', 
+                '<div style="background:#EFEB8B">$2</div>',
+                $error
+            );
+            
+            $error = str_replace('&lt;?php&nbsp;', '', $error);
+            die('<code>
+                Error: ' . $exception->getMessage()
+                . '<br />At ' .  $exception->getFile()
+                . '<br />Line: ' . $new_line
+                . '<p /><div style="border:1px solid #ddd;width:60%">' . $error . '</div>'
+                . str_replace('#', '<br />#', $exception->getTraceAsString())
+                . '</code>'
+            );
+        }
+    }
+    //initialize custom Exception
+    set_exception_handler(array(
+        'Exception\DBException',
+        'init'
+    ));
+}
 
-	}
-	
-	public function select($select = '*')
-	{
-		$this->selected = $select;
-		$stmt = self::$conn->prepare(
-			'SELECT ' . $this->selected
-			. ' FROM ' . $this->table 
-			. $this->where
-			. $this->order
-			. $this->limit
-		);
-		if ($stmt->execute($this->datas)) {
-			
-			$this->result = $stmt->fetchAll(
-				PDO::FETCH_CLASS
-			);
-			
-			return $stmt->rowCount();
-		} else {
-			return false;
-		}
-	}
-	
-	public function limit($limit)
-	{
-		$this->limit = ' LIMIT ' . $limit;
-		return $this;
-	}
-	
-	public function order($order)
-	{
-		$this->order = ' ORDER ' . $order;
-		return $this;
-	}
-	
-	public function where($query)
-	{
-		if (is_array($query)) {
-			$where = implode(', ', 
-				array_map(function ($row) {
-					return $row . ' = :' . $row;
-				}, array_keys($query))
-			);
-			$this->where = ' WHERE '. $where;
-		}
-		$this->were_data = $query;
-		return $this;
-	}
-	
-	public function delete()
-	{
-		$query = self::$conn->prepare('
-			DELETE FROM ' . $this->table . $this->where
-		);
-		if ($query->execute($this->were_data)) {
-			return $query->rowCount();
-		} else {
-			return false;
-		}
-	}
-	
-	public function __set($name, $value)
-	{
-		$this->datas[$name] = $value;
-	}
-	
-	public function from($resultKey)
-	{
-		if (isset($this->result[$resultKey])) {
-			$this->datas = $this->result[$resultKey];
-			return $this;
-		}
-		else {
-			throw new Exception('invalid property set '. $resultKey);
-		}
-	}
-	
-	public function __get($name)
-	{
-		if (strcasecmp($name, 'all') == 0) {
-			return $this->result;	
-		}
-		
-		$result = ($this->datas) ?: $this->result[0];
-		if (property_exists($result, $name)) {
-			return $result->{$name};
-		} else {
-			throw new Exception($name . ' property does not exists');	
-		}	
-	}
-	
-	public function __call($name, $arguments)
-	{
-		if (! isset($arguments[0])) {
-			throw new Exception('Column must have a name');	
-		}
-		$this->new_table[] = array (
-			'type' 		=> $name,
-			'name' 		=> $arguments[0],
-			'length'	=> @ $arguments[1],
-			'null'		=> @ $arguments[2],
-			'AI'		=> @ $arguments[3],
-			'default'	=> @ $arguments[4],
-			'comment'	=> @ $arguments[5],
-			'collation'	=> @ $arguments[6],
-			'virtuality'=> @ $arguments[7]
-		);
-		return $this;
-	}
+/*
+*  PDO initialization and configuration
+*/
+namespace PDOConnection {
+    
+    use \PDO;
+    
+    class DB
+    {        
+        //hold pdo object on succesfull connection
+        public static $conn = null;
+        
+        // allow PDO debuging
+        private static $debug = false;
+        
+        // create active db if not created
+        private static $force_DB = false;
+        
+        // create active table if not created
+        private static $force_table = false;
+        
+        
+        /*
+        * Update DB properties
+        * return null
+        *
+        * @param array of DB defined propertied where key is the property
+        * name and value is the property new value
+        *
+        * debug = debug |  forceDB = force_DB | forceTbl = forceRow
+        * 
+        */
+        public static function Config($attribute)
+        {
+            if (is_array($attribute)) {
+                if (array_key_exists('debug', $attribute)) {
+                    self::$debug = $attribute['debug'];    
+                }
+                if (array_key_exists('forceDB', $attribute)) {
+                    self::$force_DB = $attribute['forceDB'];    
+                }
+                if (array_key_exists('forceTbl', $attribute)) {
+                    self::$force_table = $attribute['forceTbl'];    
+                }
+            }
+        }
+        
+        /*
+        * initialize a new PDO connection
+        * return null
+        *
+        * @param database host name
+        * @parma database name
+        * @param database username
+        * @param databse password
+        */
+        public static function init($host, $DBName, $username, $password)
+        {
+            $pdo = new PDO('mysql:host=' . $host, $username, $password);
+            if (self::$debug) {
+                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            }
+            if (self::$force_DB) {
+                $pdo->query('CREATE DATABASE IF NOT EXISTS ' . $DBName);
+            }
+            $pdo->query('USE ' . $DBName);
+            self::$conn = $pdo;
+        }
+        
+    }
+    
+}
+
+/*
+*  Inserting new data into database
+*/
+namespace Query {
+    
+    use PDOConnection\DB as DB;
+    
+    class Insert
+    {
+        //hold working or active table
+        private $table = null;
+        
+        //holds columns
+        private $columns = array();
+        
+        //hold binds for undefined type
+        private $hold = array();
+        
+        //holds data
+        private $data = array();
+        
+        //hold suplied column values
+        private $arguments = null;
+        
+        //hold select
+        private $select = null;
+        
+        //hold dynmaic property values
+        private $set = array();
+        
+        //holds custom query
+        private $query = null;
+        
+        /*
+        * sets active or working table
+        * return null
+        *
+        * @param table name
+        */
+        public function __construct($tableName = null)
+        {
+            $this->table = $tableName;
+        }
+        
+        public function __set($name, $argument)
+        {
+            $this->set[$name] = $argument;
+        }
+        
+        public function into($columns)
+        {
+            $name = $value = null;
+            foreach (explode(',', $columns) as $key => $cols) {
+                $cols = trim($cols);
+                $this->hold[$cols] = ':' . $cols;
+                $this->hold[$key] = ':' . $cols;
+                $name .= $cols . ', ';
+                $value .= ':' . $cols . ', ';
+            }
+            $name = rtrim($name, ', ');
+            $value = rtrim($value, ', ');
+            
+            $this->columns = array(
+                    'name'         => $name,
+                    'value'        => $value
+            );
+            return $this;
+        }
+        
+        public function values($values)
+        {
+            if (! is_array($values)) {
+                if (count($this->hold) > 1) {
+                    throw new \Exception(
+                        'Columns Does not match Specified values'
+                    );    
+                } else {
+                    
+                    //for single value eg[->into('fname')->value('chrys')]
+                    $this->data[$this->hold[0]] = $values;    
+                }
+            } else {
+
+                //for multi values eg[->into('fname,lname'..)->value(array('chrys','ugwu'..))]    
+                foreach ($values as $key => $val) {
+
+                    if (isset($this->hold[$key])) {
+                        $this->data[$this->hold[$key]] = $val;
+                    } else {
+                        throw new \Exception(
+                            'Array Argument ' . $key . ' Has no Name'
+                        );    
+                    }    
+                }
+            }
+        }
+        
+        public function query($queryString)
+        {
+            $this->query = $queryString;
+        }
+        
+        public function __destruct()
+        {
+            
+            if (! empty($this->set)) {
+                $into = implode(',', array_keys($this->set));    
+                $values = array_values($this->set);
+                
+                $this->into($into);
+                $this->values($values);
+            }
+            
+            if (! $this->query) {
+                $query = 'INSERT INTO ' . $this->table;
+                $query .= '(' . $this->columns['name'] . ')';
+                if ($this->select) {
+                    $query .= $this->select;    
+                } else {
+                    $query .= ' VALUES (' . $this->columns['value'] . ')';
+                }
+            } else {
+                $query = $this->query;
+            }
+            
+            try {
+                $query = DB::$conn->prepare($query);
+                if ($query->execute($this->data)) {
+                    return $query->rowCount();
+                } else {
+                    return false;
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+        }
+        
+    }
+}
+
+
+
+
+
+namespace {
+
 }
