@@ -167,6 +167,9 @@ namespace Query {
         //holds custom query
         private $query = null;
         
+		//last ID flag
+        private $lastID = false;
+        
         /*
         * sets active or working table
         * return null
@@ -176,6 +179,7 @@ namespace Query {
         public function __construct($tableName = null)
         {
             $this->table = $tableName;
+            register_shutdown_function(array($this, 'lastID'));
         }
         
         public function __set($name, $argument)
@@ -190,7 +194,7 @@ namespace Query {
                 $cols = trim($cols);
                 $this->hold[$cols] = ':' . $cols;
                 $this->hold[$key] = ':' . $cols;
-                $name .= $cols . ', ';
+                $name .= '`' . $cols . '`, ';
                 $value .= ':' . $cols . ', ';
             }
             $name = rtrim($name, ', ');
@@ -205,6 +209,7 @@ namespace Query {
         
         public function values($values)
         {
+            
             if (! is_array($values)) {
                 if (count($this->hold) > 1) {
                     throw new \Exception(
@@ -216,7 +221,7 @@ namespace Query {
                     $this->data[$this->hold[0]] = $values;    
                 }
             } else {
-
+                
                 //for multi values eg[->into('fname,lname'..)->value(array('chrys','ugwu'..))]    
                 foreach ($values as $key => $val) {
 
@@ -236,46 +241,49 @@ namespace Query {
             $this->query = $queryString;
         }
         
-        public function __destruct()
+        public function lastID()
         {
-            
-            if (! empty($this->set)) {
-                $into = implode(',', array_keys($this->set));    
-                $values = array_values($this->set);
+            $last_id = null;
+            if (! $this->lastID) {
+                if (! empty($this->set)) {
+                    $into = implode(',', array_keys($this->set));    
+                    $values = array_values($this->set);
+                    
+                    $this->into($into);
+                    $this->values($values);
+                }
                 
-                $this->into($into);
-                $this->values($values);
-            }
-            
-            if (! $this->query) {
-                $query = 'INSERT INTO ' . $this->table;
-                $query .= '(' . $this->columns['name'] . ')';
-                if ($this->select) {
-                    $query .= $this->select;    
+                if (! $this->query) {
+                    $query = 'INSERT INTO `' . $this->table;
+                    $query .= '` (' . $this->columns['name'] . ')';
+					
+                    if ($this->select) {
+                        $query .= $this->select;    
+                    } else {
+                        $query .= ' VALUES (' . $this->columns['value'] . ')';
+                    }
+					
                 } else {
-                    $query .= ' VALUES (' . $this->columns['value'] . ')';
+                    $query = $this->query;
                 }
-            } else {
-                $query = $this->query;
-            }
-            
-            try {
-                $query = DB::$conn->prepare($query);
-                if ($query->execute($this->data)) {
-                    return $query->rowCount();
-                } else {
-                    return false;
+                try {
+					
+                    $query = DB::$conn->prepare($query);
+                    if ($query->execute($this->data)) {
+                        $last_id =  DB::$conn->lastInsertId();
+                    } else {
+                        return false;
+                    }
+					
+                } catch (\PDOException $e) {  
+                   \Exception\DBException::init($e);  
                 }
-            } catch (\PDOException $e) {  
-               \Exception\DBException::init($e);  
             }
+            $this->lastID = true;
+            return $last_id;    
         }
-        
     }
 }
-
-
-
 
 
 namespace {
