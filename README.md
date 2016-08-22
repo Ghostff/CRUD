@@ -19,7 +19,7 @@ Method 2:
 ```php
 $query = new Query\Insert('Product');
 $query->into('title, price, date')
-	  ->values(['Shirt', 2.55, date(Y-m-d')]);   
+	  ->values(['Shirt', 2.55, date('Y-m-d')]);   
 
 echo $query->lastID(); //outputs last inserted ID
 
