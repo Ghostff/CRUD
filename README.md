@@ -1,9 +1,47 @@
 # CRUDE
 An easy PHP ORM
 
-# CRUDE
-An easy PHP ORM
 
+# Functions  
+**Where(** [String|array] *$name*, &nbsp;&nbsp;&nbsp;[String|array]*$value* **)**  
+If ``$name`` is a ``string``:  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;``$name``:&nbsp;&nbsp;&nbsp;string of column.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;``$value``:&nbsp;&nbsp;string of column value.  
+```php
+->where('id', 44)
+//SELECT ... WHERE id = 44
+```
+If ``$name`` is an ``array``:  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;``$name``:&nbsp;&nbsp;array keys(s) should be a specified table column name and key value should be the column value.   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;``$value``:&nbsp;&nbsp; Use to specify conditions opperator. default ( *AND* )  
+```php
+->where(array('id' => 33, 'Name' => 'Foo'))
+//SELECT ... WHERE id = 33 AND name = 'Foo'
+```
+while   
+```php
+->where(array('id' => 33, 'Name' => 'Foo'), 'or')
+//SELECT ... WHERE id = 33 OR name = 'Foo'
+
+```
+**_toString(** *null* **)**   
+Return a string of query that will be executed
+```php
+$query = new Query\Insert('Product');
+$query->title = 'top';
+echo $query->_toString();
+
+//OR--
+
+echo $query->into('title')->value('Shoes')->_toString();
+
+//Ouputs:
+//		Query: INSERT INTO `Product` (`title`) VALUES (:title)
+//		Data: {":title":"top"}
+
+//		Query: INSERT INTO `Product` (`title`) VALUES (:title)
+//		Data: {":title":"Shoes"}
+```
 INSERT METHODS
 -------
 
@@ -21,8 +59,8 @@ Method 1:
 Method 2:   
 ```php
     $query->into('title,price,name')
-               ->value(['Shoes', 10.99, 'aba'])
-               ->end();
+          ->value(['Shoes', 10.99, 'aba'])
+          ->end();
                
     ->end(true) //returns last Inserted ID
 
@@ -46,23 +84,17 @@ Method 1:
     $query->title = 'Bar';
     $query->price = 15.99;
     $query->name = 'Foo';
-    
-    //Match Cases
-    $query->where('id', 1) | $query->where(['id', 1]); //single match
-    
-    $query->where(['id' => 1, 'name' => 'Bar']); //multiple matches [WHERE .. AND ...] (defualt AND)
-    $query->where(['id' => 1, 'name' => 'Bar'], 'OR'); //multiple matches [WHERE .. OR ...]
-    
-    $query->end();
+    $query->where('id', 1)
+          ->end();
     $query->end(true) //returns numbers of updated columns
 ```
 Method 2:
 ```php
     $query = new Query\Update('Product');
     $query->set('title, price, name')
-            ->to(['Foo', 20, 'Bar'])
-            ->where(['id' => 5, 'name' => 'chrys'], 'Or')
-            ->end();
+          ->to(['Foo', 20, 'Bar'])
+          ->where(['id' => 5, 'name' => 'chrys'], 'or')
+          ->end();
           
    ->end(true) //returns numbers of updated columns
 ```
@@ -79,7 +111,7 @@ DELETE METHODS
 Method 1:
 ```php
     $query = new Query\Delete('Product');
-    $query->where('id', 3) //Single match | $query->where(['id' => 1, 'name' => 'Bar'], ..OR..)
+    $query->where('id', 3)
           ->end();
           
     ->end(true) //returns numbers of deleted columns
