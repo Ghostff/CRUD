@@ -48,7 +48,7 @@ Method 1:
     $query->name = 'Foo';
     
     //Match Cases
-    $query->where('id', 1) | $query->where(['id', 1]); //single matches
+    $query->where('id', 1) | $query->where(['id', 1]); //single match
     
     $query->where(['id' => 1, 'name' => 'Bar']); //multiple matches [WHERE .. AND ...] (defualt AND)
     $query->where(['id' => 1, 'name' => 'Bar'], 'OR'); //multiple matches [WHERE .. OR ...]
