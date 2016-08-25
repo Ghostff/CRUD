@@ -123,5 +123,18 @@ Method 2:
           ->end();
           
     ->end(true) //returns numbers of deleted columns
+```    
+SELECT METHODS
+-------
+Method 1:
+```php
+    $query = new Query\Select('Product');
+    $query->from('title, price, name')
+	      ->where('id', 2);
+          ->end();
+          
+    ->end(number) //returns they value of specified key(number)
+    
+    echo $query->title;
+    
 ```
-
