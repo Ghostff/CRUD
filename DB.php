@@ -150,43 +150,43 @@ namespace Auxiliary {
         */
         public static function makeColsStm(&$object)
         {
-			$data = array();
-			$column = null;
-			foreach ($object->data as $name => $value) {
-				$column .= '`' . $name . '` = :' . $name . ', ';
-				$data[':' . $name] = $value;
-			}
-			$object->data = $data;
-			return rtrim($column, ', ');
+            $data = array();
+            $column = null;
+            foreach ($object->data as $name => $value) {
+                $column .= '`' . $name . '` = :' . $name . ', ';
+                $data[':' . $name] = $value;
+            }
+            $object->data = $data;
+            return rtrim($column, ', ');
         }
         
-		public static function makeCols(&$object)
-		{
-			$data = array();
-			$column = $binds = null;
-			foreach ($object->data as $name => $value) {
-				if ($object->select) {
-					if (substr($name, 0, 1) != ':') {
-						$column .= '`' . $name . '`, ';
-					} else {
-						$name = ltrim($name, ':');
-						$data[':' . $name] = $value;
-					}
-				}
-				else {
-					$binds .= ':' . $name . ', ';
-					$column .= '`' . $name . '`, ';
-					$data[':' . $name] = $value;
-				}
+        public static function makeCols(&$object)
+        {
+            $data = array();
+            $column = $binds = null;
+            foreach ($object->data as $name => $value) {
+                if ($object->select) {
+                    if (substr($name, 0, 1) != ':') {
+                        $column .= '`' . $name . '`, ';
+                    } else {
+                        $name = ltrim($name, ':');
+                        $data[':' . $name] = $value;
+                    }
+                }
+                else {
+                    $binds .= ':' . $name . ', ';
+                    $column .= '`' . $name . '`, ';
+                    $data[':' . $name] = $value;
+                }
 
-			}
-			$object->data = $data;	
-			return array(
-				'name' => rtrim($column, ', '),
-				'binds' => rtrim($binds, ', ')
-			);
-		}
-		
+            }
+            $object->data = $data;    
+            return array(
+                'name' => rtrim($column, ', '),
+                'binds' => rtrim($binds, ', ')
+            );
+        }
+        
         /*
         * assign as value to a parameters label
         * return null
@@ -196,35 +196,35 @@ namespace Auxiliary {
         */
         public static function makeColsVals($where, &$object, $ref = 'D')
         {
-			$binds = null;
-			foreach ($where as $name => $values) {
-				$binds .= '`' . $name . '` = :' . $ref . $name . ' ' . $object->statment .' ';
-				$object->data[':' . $ref . $name] = $values;
-			}
-			return rtrim($binds, $object->statment .' ');
+            $binds = null;
+            foreach ($where as $name => $values) {
+                $binds .= '`' . $name . '` = :' . $ref . $name . ' ' . $object->statment .' ';
+                $object->data[':' . $ref . $name] = $values;
+            }
+            return rtrim($binds, $object->statment .' ');
         }
-		
-		/*
+        
+        /*
         * renderes query as string
         * return string or rendered query
         *
         * @param pdo query
         * @param active class
         */
-		public static function Stringfy($query, $object, $forQuery)
-		{
-			if ($forQuery) {
-				$string = array(
-					'query'	=> $query,
-					'data'	=> $object->data
-				);
-			}
-			else {
-				$string = '<code>Query: '. $query . '</code><br />';
-				$string .= '<code>Data: '. json_encode($object->data) . '</code>';
-			}
-			return $string;
-		}
+        public static function Stringfy($query, $object, $forQuery)
+        {
+            if ($forQuery) {
+                $string = array(
+                    'query'    => $query,
+                    'data'    => $object->data
+                );
+            }
+            else {
+                $string = '<code>Query: '. $query . '</code><br />';
+                $string .= '<code>Data: '. json_encode($object->data) . '</code>';
+            }
+            return $string;
+        }
     }
 }
 
@@ -233,488 +233,488 @@ namespace Auxiliary {
 */
 namespace Query {
     
-    use PDOConnection\DB as DB;	
-	
-	class Select
-	{
-		//hold column name and values
-		public $data = null;
-		
-		private $set = null;
-		
-		private $where = null;
-		
+    use PDOConnection\DB as DB;    
+    
+    class Select
+    {
+        //hold column name and values
+        public $data = null;
+        
+        private $set = null;
+        
+        private $where = null;
+        
         private $table = null;
-		
-		private $built = null;
-		
-		public $statment = 'AND';
-		
-		private $map = null;
-		
-		private $from = 0;
-		
-		public function __construct($tableNames, $map = null)
-		{
-			$this->table = $tableNames;
-			$this->map = $map;
-		}
-		
-		private function buildQuery()
-		{
-			
-			
-			$query = 'SELECT ' . $this->set;
-			$query .= ' FROM `' . $this->table . '`';
-			
-			if ($this->where)  {
-				
-				$where = \Auxiliary\Methods::makeColsVals($this->where, $this);
-				$query .= ' WHERE ' . $where . '';
-			}
-			$this->built = $query;
-		}
-		
-		public function column($columnNames = '*')
-		{
-			if ($columnNames != '*') {
-				$column = null;
-				foreach (explode(',', $columnNames) as $value) {
-					$column .= '`' . trim($value) . '`, ';
-				}
-				$this->set = rtrim($column, ', ');
-			}
-			else {
-				$this->set = '*';
-			}
-			return $this;
-		}
-		
-		public function query($queryString)
-		{
-			$this->built = $queryString;
-			return $this;
-		}
-		
-		public function where($name, $value = null)
-		{
-			if (! is_array($name) && $value) {
-				$this->where[$name] = $value;	
-			}
-			else {
-				if (is_array($name)) {
-					if (strcasecmp('or', $value) == 0) {
-						$this->statment = 'OR';
-					}
-					$this->where = $name;
-				}
-			}
-			return $this;
-		}
-		
-		public function toString($forQuery = false)
-		{
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			return \Auxiliary\Methods::Stringfy($this->built, $this, $forQuery);
-		}
-		
-		public function end($from = null)
-		{	
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			try {
-				$query = DB::$conn->prepare($this->built);
-				
-				if ($query->execute($this->data)) {
-					
-					if ($this->map) {
-						
-						$type = null;
-						if (strpos($this->map, ':') !== false) {
-							list($type, $this->map) = explode(':', $this->map);	
-						}
-						if (strcasecmp('function', $type) == 0) {
-							$type = '\PDO::FETCH_FUNC';	
-						} else {
-							$type = '\PDO::FETCH_CLASS';
-						}
-						$query->fetchAll(constant($type), $this->map);
-					}
-					else {
-						$result = $query->fetchAll(\PDO::FETCH_ASSOC);
-					}
-					if ($from === null) {
-						return $result;	
-					}
-					else {
-						if (isset($result[$from])) {
-							foreach ($result[$from] as $name => $value) {
-								$this->{$name} = $value;	
-							}
-							return $result[$from];
-						}
-						else {
-							throw new \Exception(
-								'You are trying to access an unkown offset(' . $from . ')'
-							);
-						}
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-			
-		}
-		
-	}
-	
-	class Insert
-	{
-		//hold column name and values
-		public $data = null;
-		
-		private $set = null;
-		
-		public $select = null;
-		
+        
+        private $built = null;
+        
+        public $statment = 'AND';
+        
+        private $map = null;
+        
+        private $from = 0;
+        
+        public function __construct($tableNames, $map = null)
+        {
+            $this->table = $tableNames;
+            $this->map = $map;
+        }
+        
+        private function buildQuery()
+        {
+            
+            
+            $query = 'SELECT ' . $this->set;
+            $query .= ' FROM `' . $this->table . '`';
+            
+            if ($this->where)  {
+                
+                $where = \Auxiliary\Methods::makeColsVals($this->where, $this);
+                $query .= ' WHERE ' . $where . '';
+            }
+            $this->built = $query;
+        }
+        
+        public function column($columnNames = '*')
+        {
+            if ($columnNames != '*') {
+                $column = null;
+                foreach (explode(',', $columnNames) as $value) {
+                    $column .= '`' . trim($value) . '`, ';
+                }
+                $this->set = rtrim($column, ', ');
+            }
+            else {
+                $this->set = '*';
+            }
+            return $this;
+        }
+        
+        public function query($queryString)
+        {
+            $this->built = $queryString;
+            return $this;
+        }
+        
+        public function where($name, $value = null)
+        {
+            if (! is_array($name) && $value) {
+                $this->where[$name] = $value;    
+            }
+            else {
+                if (is_array($name)) {
+                    if (strcasecmp('or', $value) == 0) {
+                        $this->statment = 'OR';
+                    }
+                    $this->where = $name;
+                }
+            }
+            return $this;
+        }
+        
+        public function toString($forQuery = false)
+        {
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            return \Auxiliary\Methods::Stringfy($this->built, $this, $forQuery);
+        }
+        
+        public function end($from = null)
+        {    
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            try {
+                $query = DB::$conn->prepare($this->built);
+                
+                if ($query->execute($this->data)) {
+                    
+                    if ($this->map) {
+                        
+                        $type = null;
+                        if (strpos($this->map, ':') !== false) {
+                            list($type, $this->map) = explode(':', $this->map);    
+                        }
+                        if (strcasecmp('function', $type) == 0) {
+                            $type = '\PDO::FETCH_FUNC';    
+                        } else {
+                            $type = '\PDO::FETCH_CLASS';
+                        }
+                        $query->fetchAll(constant($type), $this->map);
+                    }
+                    else {
+                        $result = $query->fetchAll(\PDO::FETCH_ASSOC);
+                    }
+                    if ($from === null) {
+                        return $result;    
+                    }
+                    else {
+                        if (isset($result[$from])) {
+                            foreach ($result[$from] as $name => $value) {
+                                $this->{$name} = $value;    
+                            }
+                            return $result[$from];
+                        }
+                        else {
+                            throw new \Exception(
+                                'You are trying to access an unkown offset(' . $from . ')'
+                            );
+                        }
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+            
+        }
+        
+    }
+    
+    class Insert
+    {
+        //hold column name and values
+        public $data = null;
+        
+        private $set = null;
+        
+        public $select = null;
+        
         private $table = null;
-		
-		private $built = null;
-		
-		private $duplicate = null;
-		
-		public $statment = ',';
-		
-		
-		public function __construct($tableNames)
-		{
-			$this->table = $tableNames;
-		}
-		
-		public function __set($name, $value)
-		{
-			$this->data[$name] = $value;
-		}
-		
-		private function buildQuery()
-		{
-			$column = \Auxiliary\Methods::makeCols($this);
-			
-			$query = 'INSERT INTO `' . $this->table;
-			$query .= '` (' . $column['name'] . ')';
-			
-			if ($this->select) {
-				$query .= ' ' . $this->select['query'];    
-			} else {
-				$query .= ' VALUES (' . $column['binds'] . ')';
-			}
-			
-			if ($this->duplicate) {
-				
-				$duplicate = \Auxiliary\Methods::makeColsVals(
-					$this->duplicate,
-					$this,
-					'D'
-				);
-				$query .= ' ON DUPLICATE KEY UPDATE ' . $duplicate;
-			}
-			
-			$this->built = $query;
-		}
-		
-		public function onDuplictae($name, $value = null)
-		{
-			if (! is_array($name) && $value) {
-				$this->duplicate[$name] = $value;	
-			}
-			else {
-				if (is_array($name)) {
-					if (strcasecmp('or', $value) == 0) {
-						$this->statment = 'OR';
-					}
-					$this->duplicate = $name;
-				}
-			}
-			return $this;
-		}
-		
-		public function into($columnNames)
-		{
-			$this->set = array_map('trim', explode(',', $columnNames));
-			return $this;
-		}
-		
-		public function value($columnvalues)
-		{
-			if (is_array($columnvalues)){
-				foreach ($columnvalues as $key => $value) {
-					$this->data[$this->set[$key]] = $value;
-				}
-			}
-			else {
-				$this->data[$this->set[0]] = $columnvalues;
-			}
-			return $this;
-		}
-		
-		public function __call($name, $arg)
-		{
-			if (! method_exists($this->select, $name)) {
-				throw new \Exception(
-					'The method \'' . $name . '\' is not a valid class::Select function'
-				);
-			}
-			call_user_func_array(
-				array(&$this->select, $name),
-				$arg
-			);
-			if ($name == 'where') {
-				$this->select = $this->select->toString(true);
-				$this->data = array_flip($this->set);
-				$this->data = array_merge(
-					$this->data,
-					$this->select['data']
-				);
-			}
-			return $this;
-		}
-		
-		public function select($tableNames)
-		{
-			$this->select = new Select($tableNames);
-			return $this;
-		}
-		
-		public function query($queryString)
-		{
-			$this->built = $queryString;
-			return $this;
-		}
-		
-		public function toString($forQuery = false)
-		{
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			return \Auxiliary\Methods::Stringfy($this->built, $this, $forQuery);
-		}
-		
-		public function end($lastID = false)
-		{	
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			try {
-				$query = DB::$conn->prepare($this->built);
-				if ($query->execute($this->data)) {
-					if ($lastID) {
-						return DB::$conn->lastInsertId();
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-			
-		}
-	}
-	
-	class Update
-	{
-		//hold column name and values
-		public $data = null;
-		
-		private $set = null;
-		
-		private $where = null;
-		
+        
+        private $built = null;
+        
+        private $duplicate = null;
+        
+        public $statment = ',';
+        
+        
+        public function __construct($tableNames)
+        {
+            $this->table = $tableNames;
+        }
+        
+        public function __set($name, $value)
+        {
+            $this->data[$name] = $value;
+        }
+        
+        private function buildQuery()
+        {
+            $column = \Auxiliary\Methods::makeCols($this);
+            
+            $query = 'INSERT INTO `' . $this->table;
+            $query .= '` (' . $column['name'] . ')';
+            
+            if ($this->select) {
+                $query .= ' ' . $this->select['query'];    
+            } else {
+                $query .= ' VALUES (' . $column['binds'] . ')';
+            }
+            
+            if ($this->duplicate) {
+                
+                $duplicate = \Auxiliary\Methods::makeColsVals(
+                    $this->duplicate,
+                    $this,
+                    'D'
+                );
+                $query .= ' ON DUPLICATE KEY UPDATE ' . $duplicate;
+            }
+            
+            $this->built = $query;
+        }
+        
+        public function onDuplictae($name, $value = null)
+        {
+            if (! is_array($name) && $value) {
+                $this->duplicate[$name] = $value;    
+            }
+            else {
+                if (is_array($name)) {
+                    if (strcasecmp('or', $value) == 0) {
+                        $this->statment = 'OR';
+                    }
+                    $this->duplicate = $name;
+                }
+            }
+            return $this;
+        }
+        
+        public function into($columnNames)
+        {
+            $this->set = array_map('trim', explode(',', $columnNames));
+            return $this;
+        }
+        
+        public function value($columnvalues)
+        {
+            if (is_array($columnvalues)){
+                foreach ($columnvalues as $key => $value) {
+                    $this->data[$this->set[$key]] = $value;
+                }
+            }
+            else {
+                $this->data[$this->set[0]] = $columnvalues;
+            }
+            return $this;
+        }
+        
+        public function __call($name, $arg)
+        {
+            if (! method_exists($this->select, $name)) {
+                throw new \Exception(
+                    'The method \'' . $name . '\' is not a valid class::Select function'
+                );
+            }
+            call_user_func_array(
+                array(&$this->select, $name),
+                $arg
+            );
+            if ($name == 'where') {
+                $this->select = $this->select->toString(true);
+                $this->data = array_flip($this->set);
+                $this->data = array_merge(
+                    $this->data,
+                    $this->select['data']
+                );
+            }
+            return $this;
+        }
+        
+        public function select($tableNames)
+        {
+            $this->select = new Select($tableNames);
+            return $this;
+        }
+        
+        public function query($queryString)
+        {
+            $this->built = $queryString;
+            return $this;
+        }
+        
+        public function toString($forQuery = false)
+        {
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            return \Auxiliary\Methods::Stringfy($this->built, $this, $forQuery);
+        }
+        
+        public function end($lastID = false)
+        {    
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            try {
+                $query = DB::$conn->prepare($this->built);
+                if ($query->execute($this->data)) {
+                    if ($lastID) {
+                        return DB::$conn->lastInsertId();
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+            
+        }
+    }
+    
+    class Update
+    {
+        //hold column name and values
+        public $data = null;
+        
+        private $set = null;
+        
+        private $where = null;
+        
         private $table = null;
-		
-		private $built = null;
-		
-		public $statment = 'AND';
-		
-		public function __construct($tableNames)
-		{
-			$this->table = $tableNames;
-		}
-		
-		public function __set($name, $value)
-		{
-			$this->data[$name] = $value;
-		}
-		
-		private function buildQuery()
-		{
-			$column = \Auxiliary\Methods::makeColsStm($this);
-			
-			$query = 'UPDATE `' . $this->table;
-			$query .= '` SET ' . $column . '';
-			
-			if ($this->where)  {
-				
-				$where = \Auxiliary\Methods::makeColsVals($this->where, $this);
-				$query .= ' WHERE (' . $where . ')';
-			}
-			$this->built = $query;
-		}
-		
-		public function set($columnNames)
-		{
-			$this->set = array_map('trim', explode(',', $columnNames));
-			return $this;
-		}
-		
-		public function to($columnvalues)
-		{
-			if (is_array($columnvalues)){
-				foreach ($columnvalues as $key => $value) {
-					$this->data[$this->set[$key]] = $value;
-				}
-			}
-			else {
-				$this->data[$this->set[0]] = $columnvalues;
-			}
-			return $this;
-		}
-		
-		public function query($queryString)
-		{
-			$this->built = $queryString;
-			return $this;
-		}
-		
-		public function where($name, $value = null)
-		{
-			if (! is_array($name) && $value) {
-				$this->where[$name] = $value;	
-			}
-			else {
-				if (is_array($name)) {
-					if (strcasecmp('or', $value) == 0) {
-						$this->statment = 'OR';
-					}
-					$this->where = $name;
-				}
-			}
-			return $this;
-		}
-		
-		public function toString($forQuery = false)
-		{
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			return \Auxiliary\Methods::Stringfy($this->built, $this, $forQuery);
-		}
-		
-		public function end($rowCount = false)
-		{	
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			try {
-				$query = DB::$conn->prepare($this->built);
-				if ($query->execute($this->data)) {
-					if ($rowCount) {
-						return $query->rowCount();
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-			
-		}
-		
-	}
-	
-	class Delete
-	{
-		//hold column name and values
-		public $data = null;
-		
-		private $set = null;
-		
-		private $where = null;
-		
+        
+        private $built = null;
+        
+        public $statment = 'AND';
+        
+        public function __construct($tableNames)
+        {
+            $this->table = $tableNames;
+        }
+        
+        public function __set($name, $value)
+        {
+            $this->data[$name] = $value;
+        }
+        
+        private function buildQuery()
+        {
+            $column = \Auxiliary\Methods::makeColsStm($this);
+            
+            $query = 'UPDATE `' . $this->table;
+            $query .= '` SET ' . $column . '';
+            
+            if ($this->where)  {
+                
+                $where = \Auxiliary\Methods::makeColsVals($this->where, $this);
+                $query .= ' WHERE (' . $where . ')';
+            }
+            $this->built = $query;
+        }
+        
+        public function set($columnNames)
+        {
+            $this->set = array_map('trim', explode(',', $columnNames));
+            return $this;
+        }
+        
+        public function to($columnvalues)
+        {
+            if (is_array($columnvalues)){
+                foreach ($columnvalues as $key => $value) {
+                    $this->data[$this->set[$key]] = $value;
+                }
+            }
+            else {
+                $this->data[$this->set[0]] = $columnvalues;
+            }
+            return $this;
+        }
+        
+        public function query($queryString)
+        {
+            $this->built = $queryString;
+            return $this;
+        }
+        
+        public function where($name, $value = null)
+        {
+            if (! is_array($name) && $value) {
+                $this->where[$name] = $value;    
+            }
+            else {
+                if (is_array($name)) {
+                    if (strcasecmp('or', $value) == 0) {
+                        $this->statment = 'OR';
+                    }
+                    $this->where = $name;
+                }
+            }
+            return $this;
+        }
+        
+        public function toString($forQuery = false)
+        {
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            return \Auxiliary\Methods::Stringfy($this->built, $this, $forQuery);
+        }
+        
+        public function end($rowCount = false)
+        {    
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            try {
+                $query = DB::$conn->prepare($this->built);
+                if ($query->execute($this->data)) {
+                    if ($rowCount) {
+                        return $query->rowCount();
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+            
+        }
+        
+    }
+    
+    class Delete
+    {
+        //hold column name and values
+        public $data = null;
+        
+        private $set = null;
+        
+        private $where = null;
+        
         private $table = null;
-		
-		private $built = null;
-		
-		public $statment = 'AND';
-		
-		public function __construct($tableNames)
-		{
-			$this->table = $tableNames;
-		}
-		
-		private function buildQuery()
-		{
-			$query = 'DELETE FROM `' . $this->table;
-			if ($this->where)  {
-				
-				$where = \Auxiliary\Methods::makeColsVals($this->where, $this);
-				$query .= '` WHERE (' . $where . ')';
-			}
-			$this->built = $query;
-		}
-		
-		public function query($queryString)
-		{
-			$this->built = $queryString;
-			return $this;
-		}
-		
-		public function where($name, $value = null)
-		{
-			if (! is_array($name) && $value) {
-				$this->where[$name] = $value;	
-			}
-			else {
-				if (is_array($name)) {
-					if (strcasecmp('or', $value) == 0) {
-						$this->statment = 'OR';
-					}
-					$this->where = $name;
-				}
-			}
-			return $this;
-		}
-		
-		public function toString($forQuery = false)
-		{
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			return \Auxiliary\Methods::Stringfy($this->built, $this, $forQuery);
-		}
-		
-		public function end($rowCount = false)
-		{	
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			try {
-				$query = DB::$conn->prepare($this->built);
-				if ($query->execute($this->data)) {
-					if ($rowCount) {
-						return $query->rowCount();
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-			
-		}
-	}
-	
-	
+        
+        private $built = null;
+        
+        public $statment = 'AND';
+        
+        public function __construct($tableNames)
+        {
+            $this->table = $tableNames;
+        }
+        
+        private function buildQuery()
+        {
+            $query = 'DELETE FROM `' . $this->table;
+            if ($this->where)  {
+                
+                $where = \Auxiliary\Methods::makeColsVals($this->where, $this);
+                $query .= '` WHERE (' . $where . ')';
+            }
+            $this->built = $query;
+        }
+        
+        public function query($queryString)
+        {
+            $this->built = $queryString;
+            return $this;
+        }
+        
+        public function where($name, $value = null)
+        {
+            if (! is_array($name) && $value) {
+                $this->where[$name] = $value;    
+            }
+            else {
+                if (is_array($name)) {
+                    if (strcasecmp('or', $value) == 0) {
+                        $this->statment = 'OR';
+                    }
+                    $this->where = $name;
+                }
+            }
+            return $this;
+        }
+        
+        public function toString($forQuery = false)
+        {
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            return \Auxiliary\Methods::Stringfy($this->built, $this, $forQuery);
+        }
+        
+        public function end($rowCount = false)
+        {    
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            try {
+                $query = DB::$conn->prepare($this->built);
+                if ($query->execute($this->data)) {
+                    if ($rowCount) {
+                        return $query->rowCount();
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+            
+        }
+    }
+    
+    
 }
 
 
