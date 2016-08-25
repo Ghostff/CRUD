@@ -281,6 +281,11 @@ namespace Query {
             return $this;
         }
         
+        public function onDuplicate($name, $value)
+        {
+            
+        }
+        
         public function _toString()
         {
             if (! $this->built) {
@@ -418,225 +423,225 @@ namespace Query {
                         }
                         $query->fetchAll(constant($type), $this->map);
                     }
-            		else {
-						$result = $query->fetchAll(\PDO::FETCH_ASSOC);
-					}
-					if ($from === null) {
-						return $result;	
-					}
-					else {
-						if (isset($result[$from])) {
-							foreach ($result[$from] as $name => $value) {
-								$this->{$name} = $value;	
-							}
-						}
-						else {
-							throw new \Exception(
-								'You are trying to access an unkown offset(' . $from . ')'
-							);
-						}
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-			
-		}
-		
-	}
-	
-	class Update
-	{
-		//hold column name and values
-		public $data = null;
-		
-		private $set = null;
-		
-		private $where = null;
-		
+                    else {
+                        $result = $query->fetchAll(\PDO::FETCH_ASSOC);
+                    }
+                    if ($from === null) {
+                        return $result;    
+                    }
+                    else {
+                        if (isset($result[$from])) {
+                            foreach ($result[$from] as $name => $value) {
+                                $this->{$name} = $value;    
+                            }
+                        }
+                        else {
+                            throw new \Exception(
+                                'You are trying to access an unkown offset(' . $from . ')'
+                            );
+                        }
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+            
+        }
+        
+    }
+    
+    class Update
+    {
+        //hold column name and values
+        public $data = null;
+        
+        private $set = null;
+        
+        private $where = null;
+        
         private $table = null;
-		
-		private $built = null;
-		
-		public $statment = 'AND';
-		
-		public function __construct($tableNames)
-		{
-			$this->table = $tableNames;
-		}
-		
-		public function __set($name, $value)
-		{
-			$this->data[$name] = $value;
-		}
-		
-		private function buildQuery()
-		{
-			$column = \Auxiliary\Methods::makeCols($this);
-			
-			$query = 'UPDATE `' . $this->table;
-			$query .= '` SET ' . $column . '';
-			
-			if ($this->where)  {
-				
-				$where = \Auxiliary\Methods::makeColsVals($this->where, $this);
-				$query .= ' WHERE (' . $where . ')';
-			}
-			$this->built = $query;
-		}
-		
-		public function set($columnNames)
-		{
-			$this->set = array_map('trim', explode(',', $columnNames));
-			return $this;
-		}
-		
-		public function to($columnvalues)
-		{
-			if (is_array($columnvalues)){
-				foreach ($columnvalues as $key => $value) {
-					$this->data[$this->set[$key]] = $value;
-				}
-			}
-			else {
-				$this->data[$this->set[0]] = $columnvalues;
-			}
-			return $this;
-		}
-		
-		public function query($queryString)
-		{
-			$this->built = $queryString;
-			return $this;
-		}
-		
-		public function where($name, $value = null)
-		{
-			if (! is_array($name) && $value) {
-				$this->where[$name] = $value;	
-			}
-			else {
-				if (is_array($name)) {
-					if (strcasecmp('or', $value) == 0) {
-						$this->statment = 'OR';
-					}
-					$this->where = $name;
-				}
-			}
-			return $this;
-		}
-		
-		public function _toString()
-		{
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			return \Auxiliary\Methods::Stringfy($this->built, $this);
-		}
-		
-		public function end($rowCount = false)
-		{	
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			try {
-				$query = DB::$conn->prepare($this->built);
-				if ($query->execute($this->data)) {
-					if ($rowCount) {
-						return $query->rowCount();
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-			
-		}
-		
-	}
-	
-	class Delete
-	{
-		//hold column name and values
-		public $data = null;
-		
-		private $set = null;
-		
-		private $where = null;
-		
+        
+        private $built = null;
+        
+        public $statment = 'AND';
+        
+        public function __construct($tableNames)
+        {
+            $this->table = $tableNames;
+        }
+        
+        public function __set($name, $value)
+        {
+            $this->data[$name] = $value;
+        }
+        
+        private function buildQuery()
+        {
+            $column = \Auxiliary\Methods::makeCols($this);
+            
+            $query = 'UPDATE `' . $this->table;
+            $query .= '` SET ' . $column . '';
+            
+            if ($this->where)  {
+                
+                $where = \Auxiliary\Methods::makeColsVals($this->where, $this);
+                $query .= ' WHERE (' . $where . ')';
+            }
+            $this->built = $query;
+        }
+        
+        public function set($columnNames)
+        {
+            $this->set = array_map('trim', explode(',', $columnNames));
+            return $this;
+        }
+        
+        public function to($columnvalues)
+        {
+            if (is_array($columnvalues)){
+                foreach ($columnvalues as $key => $value) {
+                    $this->data[$this->set[$key]] = $value;
+                }
+            }
+            else {
+                $this->data[$this->set[0]] = $columnvalues;
+            }
+            return $this;
+        }
+        
+        public function query($queryString)
+        {
+            $this->built = $queryString;
+            return $this;
+        }
+        
+        public function where($name, $value = null)
+        {
+            if (! is_array($name) && $value) {
+                $this->where[$name] = $value;    
+            }
+            else {
+                if (is_array($name)) {
+                    if (strcasecmp('or', $value) == 0) {
+                        $this->statment = 'OR';
+                    }
+                    $this->where = $name;
+                }
+            }
+            return $this;
+        }
+        
+        public function _toString()
+        {
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            return \Auxiliary\Methods::Stringfy($this->built, $this);
+        }
+        
+        public function end($rowCount = false)
+        {    
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            try {
+                $query = DB::$conn->prepare($this->built);
+                if ($query->execute($this->data)) {
+                    if ($rowCount) {
+                        return $query->rowCount();
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+            
+        }
+        
+    }
+    
+    class Delete
+    {
+        //hold column name and values
+        public $data = null;
+        
+        private $set = null;
+        
+        private $where = null;
+        
         private $table = null;
-		
-		private $built = null;
-		
-		public $statment = 'AND';
-		
-		public function __construct($tableNames)
-		{
-			$this->table = $tableNames;
-		}
-		
-		private function buildQuery()
-		{
-			$query = 'DELETE FROM `' . $this->table;
-			if ($this->where)  {
-				
-				$where = \Auxiliary\Methods::makeColsVals($this->where, $this);
-				$query .= '` WHERE (' . $where . ')';
-			}
-			$this->built = $query;
-		}
-		
-		public function query($queryString)
-		{
-			$this->built = $queryString;
-			return $this;
-		}
-		
-		public function where($name, $value = null)
-		{
-			if (! is_array($name) && $value) {
-				$this->where[$name] = $value;	
-			}
-			else {
-				if (is_array($name)) {
-					if (strcasecmp('or', $value) == 0) {
-						$this->statment = 'OR';
-					}
-					$this->where = $name;
-				}
-			}
-			return $this;
-		}
-		
-		public function _toString()
-		{
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			return \Auxiliary\Methods::Stringfy($this->built, $this);
-		}
-		
-		public function end($rowCount = false)
-		{	
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			try {
-				$query = DB::$conn->prepare($this->built);
-				if ($query->execute($this->data)) {
-					if ($rowCount) {
-						return $query->rowCount();
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-			
-		}
-	}
-	
-	
+        
+        private $built = null;
+        
+        public $statment = 'AND';
+        
+        public function __construct($tableNames)
+        {
+            $this->table = $tableNames;
+        }
+        
+        private function buildQuery()
+        {
+            $query = 'DELETE FROM `' . $this->table;
+            if ($this->where)  {
+                
+                $where = \Auxiliary\Methods::makeColsVals($this->where, $this);
+                $query .= '` WHERE (' . $where . ')';
+            }
+            $this->built = $query;
+        }
+        
+        public function query($queryString)
+        {
+            $this->built = $queryString;
+            return $this;
+        }
+        
+        public function where($name, $value = null)
+        {
+            if (! is_array($name) && $value) {
+                $this->where[$name] = $value;    
+            }
+            else {
+                if (is_array($name)) {
+                    if (strcasecmp('or', $value) == 0) {
+                        $this->statment = 'OR';
+                    }
+                    $this->where = $name;
+                }
+            }
+            return $this;
+        }
+        
+        public function _toString()
+        {
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            return \Auxiliary\Methods::Stringfy($this->built, $this);
+        }
+        
+        public function end($rowCount = false)
+        {    
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            try {
+                $query = DB::$conn->prepare($this->built);
+                if ($query->execute($this->data)) {
+                    if ($rowCount) {
+                        return $query->rowCount();
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+            
+        }
+    }
+    
+    
 }
 
 
