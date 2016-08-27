@@ -36,11 +36,11 @@ echo $query->_toString();
 echo $query->into('title')->value('Shoes')->_toString();
 
 //Ouputs:
-//		Query: INSERT INTO `Product` (`title`) VALUES (:title)
-//		Data: {":title":"top"}
+//        Query: INSERT INTO `Product` (`title`) VALUES (:title)
+//        Data: {":title":"top"}
 
-//		Query: INSERT INTO `Product` (`title`) VALUES (:title)
-//		Data: {":title":"Shoes"}
+//        Query: INSERT INTO `Product` (`title`) VALUES (:title)
+//        Data: {":title":"Shoes"}
 ```
 INSERT METHODS
 -------
@@ -130,11 +130,52 @@ Method 1:
 ```php
     $query = new Query\Select('Product');
     $query->from('title, price, name')
-	      ->where('id', 2);
-          ->end();
+           ->where('id', 2);
+           ->end();
           
     ->end(number) //returns they value of specified key(number)
     
     echo $query->title;
-    
+```   
+
+Mapping the columns of each row to named properties in the class   
+
+```php
+class ProductClass
+{
+    public $title = null;
+    public $price = null;
+    public $name = null;
+
+    public function __construct()
+    {
+        //echo $this->title;
+        //echo $this->price;
+        //echo $this->name;
+    }
+
+}
+
+$query = new Query\Select('Product', 'ProductClass'); // 
+$query->from('title, price, name')
+      ->where('id', 2);
+      ->end();
 ```
+
+Return the results of calling the specified function
+
+```php
+
+function productFunction($title, $price, $name)
+{
+    //echo $title;
+    //echo $price;
+    //echo $name;
+}
+
+$query = new Query\Select('Product', 'function:productFunction'); // 
+$query->from('title, price, name')
+      ->where('id', 2);
+      ->end();
+```
+
