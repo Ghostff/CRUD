@@ -63,6 +63,8 @@ Method 2:
           ->end();
                
     ->end(true) //returns last Inserted ID
+    //OR --
+    ->toString() //outputs query string
 
  ```
  
@@ -75,6 +77,8 @@ Method 3:
      )->end();
      
      ->end(true) //returns last Inserted ID
+     //OR --
+     ->toString() //outputs query string
 ```
 UPDATE METHODS
 -------
@@ -87,6 +91,8 @@ Method 1:
     $query->where('id', 1)
           ->end();
     $query->end(true) //returns numbers of updated columns
+    //OR --
+    ->toString() //outputs query string
 ```
 Method 2:
 ```php
@@ -105,6 +111,8 @@ Method 3:
           ->end();
           
     ->end(true) //returns numbers of updated columns
+    //OR --
+    ->toString() //outputs query string
 ```
 DELETE METHODS
 -------
@@ -115,6 +123,8 @@ Method 1:
           ->end();
           
     ->end(true) //returns numbers of deleted columns
+    //OR --
+    ->toString() //outputs query string
 ```
 Method 2:
 ```php
@@ -123,6 +133,8 @@ Method 2:
           ->end();
           
     ->end(true) //returns numbers of deleted columns
+    //OR --
+    ->toString() //outputs query string
 ```    
 SELECT METHODS
 -------
@@ -173,7 +185,7 @@ function productFunction($title, $price, $name)
     //echo $name;
 }
 
-$query = new Query\Select('Product', 'function:productFunction'); // 
+$query = new Query\Select('Product', 'function:productFunction');
 $query->from('title, price, name')
       ->where('id', 2);
       ->end();
