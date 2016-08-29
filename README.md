@@ -61,12 +61,26 @@ Method 2:
     $query->into('title,price,name')
           ->value(['Shoes', 10.99, 'aba'])
           ->end();
-               
+           
     ->end(true) //returns last Inserted ID
     //OR --
     ->toString() //outputs query string
 
  ```
+ OR
+ ```php
+    $query->into('title,price,name')
+          ->select('Shop')
+          ->from('title,price,name')
+          ->where('id', 2)
+          ->end();
+           
+    ->end(true) //returns last Inserted ID
+    //OR --
+    ->toString() //outputs query string
+
+ ```
+ 
  
 Method 3:  
 ```php
