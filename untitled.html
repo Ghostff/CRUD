@@ -1,17 +1,225 @@
-$test = new DB('Product');
-$test->title = 'hey';
-$test->price = 20.33;
-$test->date = date('Y-m-d');
-$test->save();
+INSERT
+---------------------------------------------------------------------------------------------------
+Method 1:
+    $query = new Query\InsertInto('Product');
+    $query->title = 'shoes';
+    $query->price = 10.99;
+    $query->name = 'FooBar';
+    $query->commit();
 
+Method 2:
+    $query = new Query\InsertInto('Product');
+	$query->values(array(
+    	'title' => 'Shoes',
+        'price'	=> 10.99,
+        'name'	=> 'FooBar'
+    ))->commit();
+      
+Method 3:
+    $query = new Query\InsertInto('Product');
+	$query->values('title', 'Shoes')
+    	  ->commit();
+          
+Method 4:
+	$query = new Query\InsertInto('Product');
+	$query->column('title, price, name')
+    	  ->values('Shoes', 10.99, 'FooBar')
+      	  ->commit();
+          
+Method 5:
+	$query = new Query\InsertInto('Product');
+	$query->column('title, price, name')
+    	  ->values(array(
+          		'Shoes', 10.99, 'FooBar'
+            ))->commit();
+            
+Method 6:
+	$query = new Query\InsertInto('Product');
+	$query->column(array(
+    		'title, price, name'
+        ))->values('Shoes', 10.99, 'FooBar')
+          ->commit();            	
+ 
+ Method 5:
+	$query = new Query\InsertInto('Product');
+	$query->column(array(
+    		'title, price, name'
+        ))->values(array(
+          	'Shoes', 10.99, 'FooBar'
+        ))->commit(); 
+        
+ Method 6:
+	$query = new Query\InsertInto('Product');
+	$query->json('{
+        "title": "Shoes",
+        "price": 10.99,
+        "name": "FooBar"
+    }')->commit(); 
+ 	
+    //Or as a file
+	$query = new Query\InsertInto('Product');
+	$query->json('myjsonDataFile.json', true)
+    	  ->commit();  
+ 
+ Method 6:
+    $query = new Query\InsertInto('Shop');
+    $query->column('fname, lname, price')
+          ->Select('title, name, price')
+          ->from('Product')
+          ->where('id', 2);
+ 
+ SELECT
+ ----------------------------------------------------------------------------------------------------
+ Method 1:
+    $query = new Query\Select('title, price, name');
+    $query->from('Product')->commit();
+    
+    
+Method 2:
+    $query = new Query\Select(['title', 'price', 'name']);
+    $query->from('Product')->commit();
+   
+Method 3:
+	$query = new Query\Select('title, price, name');
+	$query->from('Product')
+	  	  ->where('name',  'Bar')
+          ->commit();
+          
+Method 4:
+	$query = new Query\Select('title, price, name');
+	$query->from('Product')
+	  	  ->where(['name' => 'Bar', 'title' => 'Shoes'])
+          ->commit();
+          
+    //which is  Equivalent to this:
+    
+    $query = new Query\Select('title, price, name');
+	$query->from('Product')
+	  	  ->where('name', 'Bar')
+	  	  ->andWhere('title', 'Shoes')
+          ->commit();  
+          
+          
+    //WHILE
+    
+    $query = new Query\Select('title, price, name');
+	$query->from('Product')
+	  	  ->where(['name' => 'Bar', 'title' => 'Shoes'], 'OR') //default 'AND' form multi array element
+          ->commit();
+          
+    //which is  Equivalent to this:
+    
+    $query = new Query\Select('title, price, name');
+	$query->from('Product')
+	  	  ->where('name', 'Bar')
+	  	  ->orWhere('title', 'Shoes')
+          ->commit();      
 
-//update
-$test = new DB('Product');
-$test->title = 'Update Shoes';
-$test->price = '44.3';
-$test->where(['price' => 44.3])->update();
+Method 5:
+    $query = new Query\Select('title, price, name');
+    $query->from('Product')
+          ->where('name', 'Bar')
+          ->andWhere('price', 10.99)
+          ->orWhere('title', 'Shoes')
+          ->order('id')
+          ->limit(4)
+          ->commit();
+          
+      
+Method 7:
 
-//select
-$test = new DB('Product');
-$test->select();
-echo $test->price;
+    class myObject
+    {
+        public $title = null;
+        public $price = null;
+        public $name = null;
+        
+        function __construct() {
+        	var_dump($this->title, $this->price, $this->name);
+        }
+    }
+    
+    $query = new Query\Select('title, price, name', 'myObject'); // class:myObject
+    $query->from('Product')->commit();
+    
+    //Function map
+    
+    function myFuncMap($title, $price, $name)
+    {
+        var_dump($title, $price, $name);
+    }
+    
+    $query = new Query\Select('title, price, name', 'function:myFuncMap');
+    $query->from('Product')->commit();     
+     
+          
+ UPDATE
+ ----------------------------------------------------------------------------------------------------
+ Method 1:
+    $query = new Query\Update('Product');
+    $query->set('name', 'Foo')
+    	  ->where('title', 'Shoes')
+          ->commit();
+
+Method 2:
+	$query = new Query\Update('Product');
+    $query->set(array(
+    	'name' => 'Foo', 
+        'price' => 10.88
+    ))->where('title', 'Shoes')
+     ->commit();
+     
+Method 3:
+	$query = new Query\Update('Product');
+    $query->set(array(
+    	'name' => 'Foo', 
+        'price' => 10.88
+    ))->where('name', 'Bar')
+      ->andWhere('price', 10.99)
+      ->orWhere('title', 'Shoes')
+      ->commit();
+      
+ Method 4:
+    $query = new Query\Update('Product');
+    $query->where('title', 'Shoes');
+    
+    $query->title = 'Boots';
+    $query->price = 10.55;
+    $query->name = 'Foo';
+    
+    $query->commit();
+    
+    //Or--
+    
+    $query = new Query\Update('Product');
+    $query->title = 'Boots';
+    $query->price = 10.55;
+    $query->name = 'Foo';
+    
+    $query->where('title', 'Shoes')
+    	  ->commit();
+    
+ Method 1:
+    $query = new Query\Update('Product');
+    $query->json('{
+        "title": "Shoes",
+        "price": 10.99,
+        "name": "FooBar"
+    }')->where('title', 'Shoes')
+       ->commit(); 
+ 	
+    //Or as a file
+	$query = new Query\Update('Product');
+	$query->json('myjsonDataFile.json', true)
+    	  ->where('title', 'Shoes')
+          ->commit();    
+    
+    
+    
+ DELETE
+ ----------------------------------------------------------------------------------------------------
+ Method 1:
+    $query = new Query\deleteFrom('Product');
+    $query->where('title', 'Shoes')
+    	  ->orWhere('name', 'FooBar')
+          ->commit();    

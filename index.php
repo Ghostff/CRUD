@@ -1,17 +1,22 @@
 <?php
+require 'Dev\Dump.php';
+
 
 use PDOConnection\DB as DB;
 
 require 'DB.php';
     
-DB::Config([
-    'debug' => true,
-    'forceDB' => false,
-    'forcTable' => false
-]);
+DB::Config(['debug' => true]);
 DB::init('localhost', 'tester', 'root', '');
 
-$query = new Query\Insert('Product');
-$query->title = 'Shirt';
-$query->price = 2.55;
-$query->date = date('Y-m-d');
+
+$query = new Query\InsertInto('Product');
+$query = new Query\InsertInto('Product');
+$query->title = 'shoes';
+$query->price = 10.99;
+$query->name = 'FooBar';
+	  
+echo $query->toString();
+//echo $query->commit(true);
+?>
+
