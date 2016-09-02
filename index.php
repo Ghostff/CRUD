@@ -6,17 +6,20 @@ use PDOConnection\DB as DB;
 
 require 'DB.php';
     
-DB::Config(['debug' => true]);
+DB::Config([
+    'debug' => true,
+    'forceDB' => false,
+    'forcTable' => false
+]);
 DB::init('localhost', 'tester', 'root', '');
 
 
-$query = new Query\InsertInto('Product');
-$query = new Query\InsertInto('Product');
-$query->title = 'shoes';
-$query->price = 10.99;
-$query->name = 'FooBar';
-	  
+$query = new Query\InsertInto('Shop');
+$query->column('fname, lname, price')
+	  ->String('SELECT `title`, `price`, `name` FROM Product WHERE `name` = \'Foo\'');
 echo $query->toString();
-//echo $query->commit(true);
+
+
+
 ?>
 

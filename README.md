@@ -1,36 +1,38 @@
-# CRUD
+# CRUDE
 An easy PHP ORM
 
-INSERT METHOD
-------- 
-```php 
-    $query = new Query\InsertInto('Product');
-    $query->title = 'shoes';
-    $query->price = 10.99;
-    $query->name = 'FooBar';
-    $query->commit();
-```
-SELECT METHOD
+INSERT METHODS
 -------
-```php
-    $query = new Query\Select('title, price, name');
-    $query->from('Product')->commit();
-```   
 
-UPDATE METHOD
--------
-```php
-    $query = new Query\Update('Product');
-    $query->set('name', 'Foo')
-    	  ->where('title', 'Shoes')
-          ->commit();
+Method 1:   
+```php 
+$query = new Query\Insert('Product');
+$query->title = 'Shirt';
+$query->price = 2.55;
+$query->date = date('Y-m-d');   
+
+echo $query->lastID(); //outputs last inserted ID
+
 ```
-DELETE METHOD
--------
+
+Method 2:   
 ```php
-    $query = new Query\deleteFrom('Product');
-    $query->where('title', 'Shoes')
-    	  ->orWhere('name', 'FooBar')
-          ->commit(); 
-```    
+$query = new Query\Insert('Product');
+$query->into('title, price, date')
+	  ->values(['Shirt', 2.55, date('Y-m-d')]);   
+
+echo $query->lastID(); //outputs last inserted ID
+
+ ```
+ 
+Method 3:  
+```php
+$query = new Query\Insert;
+$query->query("INSERT INTO Product (title, price, date) 
+			   VALUES ('Shirt', '2.55', '2016-08-20 00:00:00')"   
+
+echo $query->lastID(); //outputs last inserted ID
+
+);
+```
 

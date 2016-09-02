@@ -257,7 +257,9 @@ namespace Query {
 				$this->columns = $columnNames;
 			}
 			else {
-				$this->columns = str_replace(' ', '', $columnNames);
+				$this->columns = str_replace(' ', '', 
+					trim($columnNames, ',')
+				);
 				$this->columns = explode(',', $this->columns);
 			}
 			$this->map = $map;
@@ -301,7 +303,30 @@ namespace Query {
 		
 		private function buildQuery()
 		{	
-			$query = 'SELECT `' . implode('`, `', $this->columns) . '`';
+			$new_column = null;
+			foreach ($this->columns as $column) {
+				
+				$pattern = '/^count\:(.*)|count\((.*)\)|count$/i';
+				if (preg_match($pattern, $column, $matched)) {
+					
+					$count = null;
+					if (isset($matched[1]) && trim($matched[1]) != false) {
+						$count = trim($matched[1]);
+					}
+					elseif (isset($matched[2]) && trim($matched[2]) != false) {
+						$count = trim($matched[2]);
+					}
+					else {
+						$count = '*';
+					}
+					$new_column .= sprintf('COUNT(%s)', $count);
+				}
+				else {
+					$new_column .= sprintf('`%s`, ', $column);	
+				}
+			}
+			$new_column = rtrim($new_column, ', ');
+			$query = 'SELECT ' . $new_column;
 			$query .= ' FROM ' . $this->table;
 			
 			if ($this->where) {
@@ -312,13 +337,6 @@ namespace Query {
 			}
 			if ($this->limit) {
 				$query .= ' LIMIT ' . $this->limit;
-			}
-			
-			if ( ! empty($this->called) && ! $this->instantiated) {
-				$this->external = array(
-					'object' => $this,
-					'query'	 => $query
-				);
 			}
 			$this->built = $query;
 		}
@@ -346,44 +364,60 @@ namespace Query {
 				
 				if ($query->execute($this->col_and_val)) {
 					
+					$result = null;
 					if ($this->map) {
-						
-						$type = null;
-						if (strpos($this->map, ':') !== false) {
-							list($type, $this->map) = explode(':', $this->map);	
+						if ($this->map === 'object') {
+							$result = $query->fetchAll(\PDO::FETCH_OBJ);
 						}
-						if (strcasecmp('function', $type) == 0) {
-							$type = '\PDO::FETCH_FUNC';	
-						} else {
-							$type = '\PDO::FETCH_CLASS';
+						elseif (is_object($this->map)) {
+							$stm = $query->fetchAll(\PDO::FETCH_ASSOC);
+							foreach ($stm as $values) {
+								foreach ($values as $key => $value) {
+									if (property_exists($this->map, $key)) {
+										$this->map->{$key}[] = $value;	
+									}
+								}
+							}
 						}
-						$query->fetchAll(constant($type), $this->map);
-						
+						else {
+							$type = null;
+							if (strpos($this->map, ':') !== false) {
+								list($type, $this->map) = explode(':', trim($this->map));
+							}
+							if (strcasecmp('function', $type) == 0) {
+								$type = '\PDO::FETCH_FUNC';	
+							} else {
+								$type = '\PDO::FETCH_CLASS';
+							}
+							$query->fetchAll(constant($type), $this->map);
+						}
 					}
 					else {
 						$result = $query->fetchAll(\PDO::FETCH_ASSOC);
-						
-							if ($from === null) {
-								foreach ($result as $values) {
-									foreach ($values as $key => $value) {
-										$this->{$key}[] = $value;
-									}
+					}
+					
+					if ($result) {			
+						if ($from === null) {
+							foreach ($result as $values) {
+								foreach ($values as $key => $value) {
+									$this->{$key}[] = $value;
 								}
-								return $result;	
+							}
+							return $result;	
+						}
+						else {
+							if (isset($result[$from])) {
+								foreach ($result[$from] as $name => $value) {
+									$this->{$name} = $value;	
+								}
+								return $result[$from];
 							}
 							else {
-								if (isset($result[$from])) {
-									foreach ($result[$from] as $name => $value) {
-										$this->{$name} = $value;	
-									}
-									return $result[$from];
-								}
-								else {
-									throw new \Exception(
-										'You are trying to access an unkown offset(' . $from . ')'
-									);
-								}
+								throw new \Exception(
+									'You are trying to access an unkown offset(' . $from . ')'
+								);
 							}
+						}
 					}
 				}
 			} catch (\PDOException $e) {  
@@ -432,7 +466,7 @@ namespace Query {
 					$arguments[1] = null;
 				}
 				$refrence =  new $classNamespace($arguments[0], $arguments[1]);
-				$refrence->external = array('init');
+				$refrence->called = array('init');
 				$this->instantiated = $refrence;
 				return $refrence;
 			}
@@ -767,8 +801,85 @@ namespace Query {
 		}
 	}
 	
-}
+	class String
+	{
+		public $col_and_val = null;
+		private $built = null;
+		public $called = array();
+		private $instantiated = null;
+		
+		
+		public function toString($forQuery = false)
+		{
+			return \Auxiliary\Methods::Stringfy(
+				$this->built,
+				$this->col_and_val,
+				$forQuery
+			);
+		}
+		
+		private function buildQuery()
+		{	
+			if ( ! $this->built) {
+				$this->buildQuery();	
+			}
+			if ( ! empty($this->called) && ! $this->instantiated) {
+				$this->external = array(
+					'object' => $this,
+					'query'	 => $query
+				);
+			}
+			$this->built = $query;
+		}
+		
+		public function __construct($queryString)
+		{
+			$this->built = $queryString;
+		}
+		
+		public function commit($method = null, $casting = false)
+		{
+			if (! $this->built) {
+				$this->buildQuery();
+			}
+			
+			try {
+				$query = DB::$conn->prepare($this->built);
 
-
-namespace {
+				if ($query->execute($this->col_and_val)) {
+					if ($method) {
+						$argument = null;
+						if (strpos($method, '(') !== false) {
+							list($method, $argument) = explode('(', rtrim($method, ')'));										
+						}
+						
+						if (method_exists($query, $method)) {	
+							if ( ! $casting) {
+								return $query->{$method}(@constant($argument));
+							}
+							else {
+								return $query->{$method}($casting);
+							}
+						}
+						elseif (method_exists(DB::$conn, $method)) {
+							if ( ! $castiing) {
+								return DB::$conn->{$method}(@constant($argument));
+							}
+							else {
+								return DB::$conn->{$method}($casting);
+							}
+						}
+						else {
+							throw new \Exception(
+								sprintf('Method \'%s\' not Found', $method)
+							);	
+						}
+					}
+				}
+			} catch (\PDOException $e) {  
+			   \Exception\DBException::init($e);  
+			}
+		}
+	}
+	
 }

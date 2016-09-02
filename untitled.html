@@ -67,6 +67,17 @@ Method 6:
           ->Select('title, name, price')
           ->from('Product')
           ->where('id', 2);
+          
+          
+     //Or
+     
+     $query = new Query\InsertInto('Shop');
+	 $query->column('fname, lname, price')
+	  	   ->String('SELECT `title`, `price`, `name` FROM Product WHERE `id` = 2');
+      
+     //note this ->commit or ->toString will run the Select::commit or Select::toString
+     
+     $query->commit();
  
  SELECT
  ----------------------------------------------------------------------------------------------------
@@ -84,7 +95,16 @@ Method 3:
 	$query->from('Product')
 	  	  ->where('name',  'Bar')
           ->commit();
-          
+ 
+Method 1:
+	$query = new Query\Select('count');
+	$query->from('Product')->commit();
+
+
+Method 2:
+	$query = new Query\Select(['title', 'price', 'count:name']);
+	$query->from('Product')->commit();        
+           
 Method 4:
 	$query = new Query\Select('title, price, name');
 	$query->from('Product')
@@ -98,8 +118,7 @@ Method 4:
 	  	  ->where('name', 'Bar')
 	  	  ->andWhere('title', 'Shoes')
           ->commit();  
-          
-          
+      
     //WHILE
     
     $query = new Query\Select('title, price, name');
@@ -150,7 +169,24 @@ Method 7:
     }
     
     $query = new Query\Select('title, price, name', 'function:myFuncMap');
-    $query->from('Product')->commit();     
+    $query->from('Product')->commit(); 
+    
+    //not advisable
+    
+    class user
+    {
+        public $title = null;
+        public $price = null;
+        public $name = null;
+        
+        public function __construct()
+        {	
+            $query = new Query\Select('title, price, name', $this);
+            $query->from('Product')->commit();
+        }
+        
+    }
+    $user = new user;    
      
           
  UPDATE
@@ -223,3 +259,18 @@ Method 3:
     $query->where('title', 'Shoes')
     	  ->orWhere('name', 'FooBar')
           ->commit();    
+
+ QUERY
+ ----------------------------------------------------------------------------------------------------
+ Method 1:
+    $query = new Query\String('SELECT `title`, `price`, `name` FROM Product WHERE `name` = \'Foo\'');
+    $query->commit('fetchAll(PDO::FETCH_ASSOC)');
+    
+    
+ Method 2:
+    $query = new Query\String('SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname');
+	$query->col_and_val = array(':wname' => 'Foo');
+    $query->commit('fetchAll(PDO::FETCH_OBJ)');
+    
+    //can pass anything that is not constant as a 2nd arg
+    //eg $query->commit('someMethod', arrar(data));
