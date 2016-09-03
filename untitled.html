@@ -1,14 +1,14 @@
 INSERT
 ---------------------------------------------------------------------------------------------------
 Method 1:
-    $query = new Query\InsertInto('Product');
+    $query = new Sql\InsertInto('Product');
     $query->title = 'shoes';
     $query->price = 10.99;
     $query->name = 'FooBar';
     $query->commit();
 
 Method 2:
-    $query = new Query\InsertInto('Product');
+    $query = new Sql\InsertInto('Product');
 	$query->values(array(
     	'title' => 'Shoes',
         'price'	=> 10.99,
@@ -16,32 +16,32 @@ Method 2:
     ))->commit();
       
 Method 3:
-    $query = new Query\InsertInto('Product');
+    $query = new Sql\InsertInto('Product');
 	$query->values('title', 'Shoes')
     	  ->commit();
           
 Method 4:
-	$query = new Query\InsertInto('Product');
+	$query = new Sql\InsertInto('Product');
 	$query->column('title, price, name')
     	  ->values('Shoes', 10.99, 'FooBar')
       	  ->commit();
           
 Method 5:
-	$query = new Query\InsertInto('Product');
+	$query = new Sql\InsertInto('Product');
 	$query->column('title, price, name')
     	  ->values(array(
           		'Shoes', 10.99, 'FooBar'
             ))->commit();
             
 Method 6:
-	$query = new Query\InsertInto('Product');
+	$query = new Sql\InsertInto('Product');
 	$query->column(array(
     		'title, price, name'
         ))->values('Shoes', 10.99, 'FooBar')
           ->commit();            	
  
  Method 5:
-	$query = new Query\InsertInto('Product');
+	$query = new Sql\InsertInto('Product');
 	$query->column(array(
     		'title, price, name'
         ))->values(array(
@@ -49,7 +49,7 @@ Method 6:
         ))->commit(); 
         
  Method 6:
-	$query = new Query\InsertInto('Product');
+	$query = new Sql\InsertInto('Product');
 	$query->json('{
         "title": "Shoes",
         "price": 10.99,
@@ -57,12 +57,12 @@ Method 6:
     }')->commit(); 
  	
     //Or as a file
-	$query = new Query\InsertInto('Product');
+	$query = new Sql\InsertInto('Product');
 	$query->json('myjsonDataFile.json', true)
     	  ->commit();  
  
  Method 6:
-    $query = new Query\InsertInto('Shop');
+    $query = new Sql\InsertInto('Shop');
     $query->column('fname, lname, price')
           ->Select('title, name, price')
           ->from('Product')
@@ -71,7 +71,7 @@ Method 6:
           
      //Or
      
-     $query = new Query\InsertInto('Shop');
+     $query = new Sql\InsertInto('Shop');
 	 $query->column('fname, lname, price')
 	  	   ->String('SELECT `title`, `price`, `name` FROM Product WHERE `id` = 2');
       
@@ -82,38 +82,38 @@ Method 6:
  SELECT
  ----------------------------------------------------------------------------------------------------
  Method 1:
-    $query = new Query\Select('title, price, name');
+    $query = new Sql\Select('title, price, name');
     $query->from('Product')->commit();
     
     
 Method 2:
-    $query = new Query\Select(['title', 'price', 'name']);
+    $query = new Sql\Select(['title', 'price', 'name']);
     $query->from('Product')->commit();
    
 Method 3:
-	$query = new Query\Select('title, price, name');
+	$query = new Sql\Select('title, price, name');
 	$query->from('Product')
 	  	  ->where('name',  'Bar')
           ->commit();
  
 Method 1:
-	$query = new Query\Select('count');
+	$query = new Sql\Select('count');
 	$query->from('Product')->commit();
 
 
 Method 2:
-	$query = new Query\Select(['title', 'price', 'count:name']);
+	$query = new Sql\Select(['title', 'price', 'count:name']);
 	$query->from('Product')->commit();        
            
 Method 4:
-	$query = new Query\Select('title, price, name');
+	$query = new Sql\Select('title, price, name');
 	$query->from('Product')
 	  	  ->where(['name' => 'Bar', 'title' => 'Shoes'])
           ->commit();
           
     //which is  Equivalent to this:
     
-    $query = new Query\Select('title, price, name');
+    $query = new Sql\Select('title, price, name');
 	$query->from('Product')
 	  	  ->where('name', 'Bar')
 	  	  ->andWhere('title', 'Shoes')
@@ -121,21 +121,21 @@ Method 4:
       
     //WHILE
     
-    $query = new Query\Select('title, price, name');
+    $query = new Sql\Select('title, price, name');
 	$query->from('Product')
 	  	  ->where(['name' => 'Bar', 'title' => 'Shoes'], 'OR') //default 'AND' form multi array element
           ->commit();
           
     //which is  Equivalent to this:
     
-    $query = new Query\Select('title, price, name');
+    $query = new Sql\Select('title, price, name');
 	$query->from('Product')
 	  	  ->where('name', 'Bar')
 	  	  ->orWhere('title', 'Shoes')
           ->commit();      
 
 Method 5:
-    $query = new Query\Select('title, price, name');
+    $query = new Sql\Select('title, price, name');
     $query->from('Product')
           ->where('name', 'Bar')
           ->andWhere('price', 10.99)
@@ -158,7 +158,7 @@ Method 7:
         }
     }
     
-    $query = new Query\Select('title, price, name', 'myObject'); // class:myObject
+    $query = new Sql\Select('title, price, name', 'myObject'); // class:myObject
     $query->from('Product')->commit();
     
     //Function map
@@ -168,7 +168,7 @@ Method 7:
         var_dump($title, $price, $name);
     }
     
-    $query = new Query\Select('title, price, name', 'function:myFuncMap');
+    $query = new Sql\Select('title, price, name', 'function:myFuncMap');
     $query->from('Product')->commit(); 
     
     //not advisable
@@ -181,7 +181,7 @@ Method 7:
         
         public function __construct()
         {	
-            $query = new Query\Select('title, price, name', $this);
+            $query = new Sql\Select('title, price, name', $this);
             $query->from('Product')->commit();
         }
         
@@ -192,13 +192,13 @@ Method 7:
  UPDATE
  ----------------------------------------------------------------------------------------------------
  Method 1:
-    $query = new Query\Update('Product');
+    $query = new Sql\Update('Product');
     $query->set('name', 'Foo')
     	  ->where('title', 'Shoes')
           ->commit();
 
 Method 2:
-	$query = new Query\Update('Product');
+	$query = new Sql\Update('Product');
     $query->set(array(
     	'name' => 'Foo', 
         'price' => 10.88
@@ -206,7 +206,7 @@ Method 2:
      ->commit();
      
 Method 3:
-	$query = new Query\Update('Product');
+	$query = new Sql\Update('Product');
     $query->set(array(
     	'name' => 'Foo', 
         'price' => 10.88
@@ -216,7 +216,7 @@ Method 3:
       ->commit();
       
  Method 4:
-    $query = new Query\Update('Product');
+    $query = new Sql\Update('Product');
     $query->where('title', 'Shoes');
     
     $query->title = 'Boots';
@@ -227,7 +227,7 @@ Method 3:
     
     //Or--
     
-    $query = new Query\Update('Product');
+    $query = new Sql\Update('Product');
     $query->title = 'Boots';
     $query->price = 10.55;
     $query->name = 'Foo';
@@ -236,7 +236,7 @@ Method 3:
     	  ->commit();
     
  Method 1:
-    $query = new Query\Update('Product');
+    $query = new Sql\Update('Product');
     $query->json('{
         "title": "Shoes",
         "price": 10.99,
@@ -245,7 +245,7 @@ Method 3:
        ->commit(); 
  	
     //Or as a file
-	$query = new Query\Update('Product');
+	$query = new Sql\Update('Product');
 	$query->json('myjsonDataFile.json', true)
     	  ->where('title', 'Shoes')
           ->commit();    
@@ -255,7 +255,7 @@ Method 3:
  DELETE
  ----------------------------------------------------------------------------------------------------
  Method 1:
-    $query = new Query\deleteFrom('Product');
+    $query = new Sql\deleteFrom('Product');
     $query->where('title', 'Shoes')
     	  ->orWhere('name', 'FooBar')
           ->commit();    
@@ -263,12 +263,12 @@ Method 3:
  QUERY
  ----------------------------------------------------------------------------------------------------
  Method 1:
-    $query = new Query\String('SELECT `title`, `price`, `name` FROM Product WHERE `name` = \'Foo\'');
+    $query = new Sql\String('SELECT `title`, `price`, `name` FROM Product WHERE `name` = \'Foo\'');
     $query->commit('fetchAll(PDO::FETCH_ASSOC)');
     
     
  Method 2:
-    $query = new Query\String('SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname');
+    $query = new Sql\String('SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname');
 	$query->col_and_val = array(':wname' => 'Foo');
     $query->commit('fetchAll(PDO::FETCH_OBJ)');
     
