@@ -12,11 +12,10 @@ DB::Config([
 DB::init('localhost', 'tester', 'root', '');
 
 
+$query = new Sql\Select('name,id');
+$query->from('Product');
+var_dump( $query->toString(true));
 
-$query = new Sql\InsertInto('Shop');
-$query->column('fname, lname, price')
-	  ->Query('SELECT `title`, `price`, `name` FROM Product WHERE `name` = \'Foo\'');
-echo $query->toString();
 
 ?>
 

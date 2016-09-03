@@ -328,10 +328,10 @@ namespace Sql {
 					else {
 						$new_column .= sprintf('`%s`, ', $column);	
 					}
-					$new_column = rtrim($new_column, ', ');
+					
 				}
 			}
-			
+			$new_column = rtrim($new_column, ', ');
 			$query = 'SELECT ' . $new_column;
 			$query .= ' FROM ' . $this->table;
 			
