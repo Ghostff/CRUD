@@ -251,7 +251,7 @@ namespace Sql {
 		
 		private $instantiated = null;
 		
-		public function __construct($columnNames, $map = null)
+		public function __construct($columnNames = '*', $map = null)
 		{
 			if (is_array($columnNames)) {
 				$this->columns = $columnNames;
@@ -306,26 +306,32 @@ namespace Sql {
 			$new_column = null;
 			foreach ($this->columns as $column) {
 				
-				$pattern = '/^count\:(.*)|count\((.*)\)|count$/i';
-				if (preg_match($pattern, $column, $matched)) {
-					
-					$count = null;
-					if (isset($matched[1]) && trim($matched[1]) != false) {
-						$count = trim($matched[1]);
-					}
-					elseif (isset($matched[2]) && trim($matched[2]) != false) {
-						$count = trim($matched[2]);
-					}
-					else {
-						$count = '*';
-					}
-					$new_column .= sprintf('COUNT(%s)', $count);
+				if ($column == '*') {
+					$new_column = '*';
 				}
 				else {
-					$new_column .= sprintf('`%s`, ', $column);	
+					$pattern = '/^count\:(.*)|count\((.*)\)|count$/i';
+					if (preg_match($pattern, $column, $matched)) {
+						
+						$count = null;
+						if (isset($matched[1]) && trim($matched[1]) != false) {
+							$count = trim($matched[1]);
+						}
+						elseif (isset($matched[2]) && trim($matched[2]) != false) {
+							$count = trim($matched[2]);
+						}
+						else {
+							$count = '*';
+						}
+						$new_column .= sprintf('COUNT(%s)', $count);
+					}
+					else {
+						$new_column .= sprintf('`%s`, ', $column);	
+					}
+					$new_column = rtrim($new_column, ', ');
 				}
 			}
-			$new_column = rtrim($new_column, ', ');
+			
 			$query = 'SELECT ' . $new_column;
 			$query .= ' FROM ' . $this->table;
 			
