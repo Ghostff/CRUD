@@ -1,38 +1,43 @@
-# CRUDE
+# CRUD
 An easy PHP ORM
 
 INSERT METHODS
--------
-
-Method 1:   
+------- 
 ```php 
-$query = new Query\Insert('Product');
-$query->title = 'Shirt';
-$query->price = 2.55;
-$query->date = date('Y-m-d');   
-
-echo $query->lastID(); //outputs last inserted ID
-
+    $query = new Sql\InsertInto('Product');
+    $query->title = 'shoes';
+    $query->price = 10.99;
+    $query->name = 'FooBar';
+    $query->commit();
 ```
-
-Method 2:   
+SELECT METHODS
+-------
 ```php
-$query = new Query\Insert('Product');
-$query->into('title, price, date')
-	  ->values(['Shirt', 2.55, date('Y-m-d')]);   
+    $query = new Sql\Select('title, price, name');
+    $query->from('Product')->commit();
+```   
 
-echo $query->lastID(); //outputs last inserted ID
-
- ```
- 
-Method 3:  
+UPDATE METHODS
+-------
 ```php
-$query = new Query\Insert;
-$query->query("INSERT INTO Product (title, price, date) 
-			   VALUES ('Shirt', '2.55', '2016-08-20 00:00:00')"   
-
-echo $query->lastID(); //outputs last inserted ID
-
-);
+    $query = new Sql\Update('Product');
+    $query->set('name', 'Foo')
+    	  ->where('title', 'Shoes')
+          ->commit();
 ```
+DELETE METHODS
+-------
+```php
+    $query = new Sql\deleteFrom('Product');
+    $query->where('title', 'Shoes')
+    	  ->orWhere('name', 'FooBar')
+          ->commit(); 
+```    
+QUERY METHODS
+-------
+```php
+$query = new Sql\InsertInto('Shop');
+$query->Query('SELECT * FROM Product WHERE `name` = \'Foo\'')
+      ->commit();
+```    
 

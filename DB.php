@@ -224,7 +224,7 @@ namespace Auxiliary {
 /*
 *  PDO quries
 */
-namespace Query {
+namespace Sql {
     
     use PDOConnection\DB as DB;	
 	
@@ -459,7 +459,7 @@ namespace Query {
 		
 		public function __call($name, $arguments)
 		{
-			$classNamespace = '\Query\\' . $name;
+			$classNamespace = __NAMESPACE__ . '\\' . $name;
 			if (class_exists($classNamespace)) {
 				
 				if ( ! isset($arguments[1])) {
@@ -801,7 +801,7 @@ namespace Query {
 		}
 	}
 	
-	class String
+	class Query
 	{
 		public $col_and_val = null;
 		private $built = null;

@@ -1,6 +1,4 @@
 <?php
-require 'Dev\Dump.php';
-
 
 use PDOConnection\DB as DB;
 
@@ -14,11 +12,10 @@ DB::Config([
 DB::init('localhost', 'tester', 'root', '');
 
 
-$query = new Query\InsertInto('Shop');
+$query = new Sql\InsertInto('Shop');
 $query->column('fname, lname, price')
-	  ->String('SELECT `title`, `price`, `name` FROM Product WHERE `name` = \'Foo\'');
+	  ->Query('SELECT `title`, `price`, `name` FROM Product WHERE `name` = \'Foo\'');
 echo $query->toString();
-
 
 
 ?>
