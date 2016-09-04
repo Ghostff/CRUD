@@ -267,6 +267,8 @@ namespace Sql {
         public $called = array();
         
         private $instantiated = null;
+		
+		public $distinct = false;
         
         public function __construct($columnNames = '*', $map = null)
         {
@@ -288,6 +290,11 @@ namespace Sql {
             return $this;
         }
         
+		public function distinct()
+		{
+			$this->distinct = true;
+			return $this;
+		}
         public function where($name, $value = null, $condition = '=')
         {
             \Auxiliary\Methods::where($name, $value, $condition, $this);
@@ -321,12 +328,13 @@ namespace Sql {
         private function buildQuery()
         {    
             $new_column = null;
+			$distinct = null;
             
             if ($this->columns == '*') {
                 $new_column = '*';
             }
             else {
-                
+      
                 foreach ($this->columns as $column) {
         
                     $pattern = '/^count\:(.*)|count\((.*)\)|count$/i';
@@ -351,7 +359,10 @@ namespace Sql {
                 $new_column = rtrim($new_column, ', ');
             }
             
-            $query = 'SELECT ' . $new_column;
+			if ($this->distinct) {
+				$distinct = 'DISTINCT ';
+			}
+            $query = 'SELECT ' . $distinct . $new_column;
             $query .= ' FROM ' . $this->table;
             
             if ($this->where) {

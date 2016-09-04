@@ -188,11 +188,25 @@ Method 7:
     }
     $user = new user;    
      
- Method 5:
+ Method 8:
     $query = new Sql\Select('*');
 	$query->from('Product')
 	      ->where(['id' => 10, 'group' => 5], 'AND', '>,<')
           ->commit();
+          
+          
+ Method 9:
+    $query = new Sql\Select('*');
+	$query->distinct()
+    	  ->from('Product')
+          ->commit();  
+          
+    //OR --- 
+    
+    $query = new Sql\Select('*');
+    $query->distinct = true;
+	$query->from('Product')
+          ->commit();      
                    
  UPDATE
  ----------------------------------------------------------------------------------------------------

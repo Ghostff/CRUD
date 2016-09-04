@@ -12,7 +12,8 @@ DB::Config([
 DB::init('localhost', 'tester', 'root', '');
 
 
-$query = new Sql\Select('*');
+$query = new Sql\Select('name');
+$query->distinct = true;
 $query->from('Product')
 	  ->where(['id' => 10, 'group' => 5], 'AND', '>,<');
 echo( $query->toString());
