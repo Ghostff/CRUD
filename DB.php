@@ -197,10 +197,10 @@ namespace Auxiliary {
                             $condition = '=';
                         }
                         
+						//$class->where  = `columnName` (=|>|<..) :wcolumnName (AND|OR..)
                         $class->where .= sprintf(
                             '`%s` %s :w%s %s ', $name, $condition, $name, $opperator
-                        );            
-                        //$class->where .= '`' . $name . '` = :w'. $name . ' ' . $opperator . ' ';
+                        );
                         $class->col_and_val[':w' . $name] = $value;
                         $key++;
                         
