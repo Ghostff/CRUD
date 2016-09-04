@@ -12,9 +12,10 @@ DB::Config([
 DB::init('localhost', 'tester', 'root', '');
 
 
-$query = new Sql\Select('name,id');
-$query->from('Product');
-var_dump( $query->toString(true));
+$query = new Sql\Select('*');
+$query->from('Product')
+	  ->where(['id' => 10, 'group' => 5], 'AND', '>,<');
+echo( $query->toString());
 
 
 ?>

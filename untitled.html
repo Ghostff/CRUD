@@ -188,7 +188,12 @@ Method 7:
     }
     $user = new user;    
      
-          
+ Method 5:
+    $query = new Sql\Select('*');
+	$query->from('Product')
+	      ->where(['id' => 10, 'group' => 5], 'AND', '>,<')
+          ->commit();
+                   
  UPDATE
  ----------------------------------------------------------------------------------------------------
  Method 1:

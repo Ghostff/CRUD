@@ -163,11 +163,11 @@ namespace Auxiliary {
 			return $string;
 		}
 		
-		public static function where($name, $value = null, $class)
+		public static function where($name, $value, $condition, $class)
 		{
 			if ( ! is_array($name)) {
 				if ($value) {
-					$class->where = '`' . $name . '` = :w'. $name;
+					$class->where = sprintf('`%s` %s :w%s', $name, $condition, $name);
 					$class->col_and_val[':w' . $name] = $value;
 				}
 				else {
@@ -186,19 +186,36 @@ namespace Auxiliary {
 					$class->where .= ' ' . $opperator . ' ';
 				}
 				
-				$data = array_map(function ($name, $value) use ($opperator, $class) {					
-					$class->where .= '`' . $name . '` = :w'. $name . ' ' . $opperator . ' ';
-					$class->col_and_val[':w' . $name] = $value;
-				}, array_keys($name), array_values($name));
+				$condition = explode(',', $condition);
+				$key = 0;
+				$data = array_map(
+					function ($name, $value) use ($opperator, $class, $condition, &$key) {
+						
+						if (isset($condition[$key])) {
+							$condition = trim($condition[$key]);
+						} else {
+							$condition = '=';
+						}
+						
+						$class->where .= sprintf(
+							'`%s` %s :w%s %s ', $name, $condition, $name, $opperator
+						);			
+						//$class->where .= '`' . $name . '` = :w'. $name . ' ' . $opperator . ' ';
+						$class->col_and_val[':w' . $name] = $value;
+						$key++;
+						
+					}, array_keys($name), array_values($name)
+				);
+				
 				$class->where = rtrim($class->where, 'AND ');
 				$class->where = rtrim($class->where, 'OR ');
 			}
 		}
 		
-		public static function andWhere($name, $value, $class)
+		public static function andWhere($name, $value, $condition, $class)
 		{
 			if ($class->where) {
-				static::where(array($name => $value), null, $class);
+				static::where(array($name => $value), null, $condition, $class);
 			}
 			else {
 				throw new \Exception(
@@ -207,10 +224,10 @@ namespace Auxiliary {
 			}
 		}
 		
-		public static function orWhere($name, $value, $class)
+		public static function orWhere($name, $value, $condition, $class)
 		{
 			if ($class->where) {
-				static::where(array($name => $value), 'OR', $class);
+				static::where(array($name => $value), 'OR', $condition, $class);
 			}
 			else {
 				throw new \Exception(
@@ -271,21 +288,21 @@ namespace Sql {
 			return $this;
 		}
 		
-		public function where($name, $value = null)
+		public function where($name, $value = null, $condition = '=')
 		{
-			\Auxiliary\Methods::where($name, $value, $this);
+			\Auxiliary\Methods::where($name, $value, $condition, $this);
 			return $this;
 		}
 		
-		public function andWhere($name, $value)
+		public function andWhere($name, $value, $condition = '=')
 		{
-			\Auxiliary\Methods::andWhere($name, $value, $this);
+			\Auxiliary\Methods::andWhere($name, $value, $condition, $this);
 			return $this;
 		}
 		
-		public function orWhere($name, $value)
+		public function orWhere($name, $value, $condition = '=')
 		{
-			\Auxiliary\Methods::orWhere($name, $value, $this);
+			\Auxiliary\Methods::orWhere($name, $value, $condition, $this);
 			return $this;
 		}
 		
@@ -304,12 +321,14 @@ namespace Sql {
 		private function buildQuery()
 		{	
 			$new_column = null;
-			foreach ($this->columns as $column) {
+			
+			if ($this->columns == '*') {
+				$new_column = '*';
+			}
+			else {
 				
-				if ($column == '*') {
-					$new_column = '*';
-				}
-				else {
+				foreach ($this->columns as $column) {
+		
 					$pattern = '/^count\:(.*)|count\((.*)\)|count$/i';
 					if (preg_match($pattern, $column, $matched)) {
 						
@@ -328,10 +347,10 @@ namespace Sql {
 					else {
 						$new_column .= sprintf('`%s`, ', $column);	
 					}
-					
 				}
+				$new_column = rtrim($new_column, ', ');
 			}
-			$new_column = rtrim($new_column, ', ');
+			
 			$query = 'SELECT ' . $new_column;
 			$query .= ' FROM ' . $this->table;
 			
