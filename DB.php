@@ -141,100 +141,100 @@ namespace Auxiliary {
     
     class Methods
     {
-		/*
+        /*
         * renderes query as string
         * return string or rendered query
         *
         * @param pdo query
         * @param active class
         */
-		public static function Stringfy($query, $data, $forQuery)
-		{
-			if ($forQuery) {
-				$string = array(
-					'query'	=> $query,
-					'data'	=> $data
-				);
-			}
-			else {
-				$string = '<code>Query: '. $query . '</code><br />';
-				$string .= '<code>Data: '. json_encode($data) . '</code>';
-			}
-			return $string;
-		}
-		
-		public static function where($name, $value, $condition, $class)
-		{
-			if ( ! is_array($name)) {
-				if ($value) {
-					$class->where = sprintf('`%s` %s :w%s', $name, $condition, $name);
-					$class->col_and_val[':w' . $name] = $value;
-				}
-				else {
-					$class->where = $name;
-				}
-			}
-			else {
-				
-				if ( ! $value) {
-					$opperator = 'AND';	
-				} else {
-					$opperator = strtoupper($value);
-				}
-				
-				if ($class->where) {
-					$class->where .= ' ' . $opperator . ' ';
-				}
-				
-				$condition = explode(',', $condition);
-				$key = 0;
-				$data = array_map(
-					function ($name, $value) use ($opperator, $class, $condition, &$key) {
-						
-						if (isset($condition[$key])) {
-							$condition = trim($condition[$key]);
-						} else {
-							$condition = '=';
-						}
-						
-						$class->where .= sprintf(
-							'`%s` %s :w%s %s ', $name, $condition, $name, $opperator
-						);			
-						//$class->where .= '`' . $name . '` = :w'. $name . ' ' . $opperator . ' ';
-						$class->col_and_val[':w' . $name] = $value;
-						$key++;
-						
-					}, array_keys($name), array_values($name)
-				);
-				
-				$class->where = rtrim($class->where, 'AND ');
-				$class->where = rtrim($class->where, 'OR ');
-			}
-		}
-		
-		public static function andWhere($name, $value, $condition, $class)
-		{
-			if ($class->where) {
-				static::where(array($name => $value), null, $condition, $class);
-			}
-			else {
-				throw new \Exception(
-					'Update::where method must be called first'
-				);
-			}
-		}
-		
-		public static function orWhere($name, $value, $condition, $class)
-		{
-			if ($class->where) {
-				static::where(array($name => $value), 'OR', $condition, $class);
-			}
-			else {
-				throw new \Exception(
-					'Update::where method must be called first'
-				);
-			}
-		}
+        public static function Stringfy($query, $data, $forQuery)
+        {
+            if ($forQuery) {
+                $string = array(
+                    'query'    => $query,
+                    'data'    => $data
+                );
+            }
+            else {
+                $string = '<code>Query: '. $query . '</code><br />';
+                $string .= '<code>Data: '. json_encode($data) . '</code>';
+            }
+            return $string;
+        }
+        
+        public static function where($name, $value, $condition, $class)
+        {
+            if ( ! is_array($name)) {
+                if ($value) {
+                    $class->where = sprintf('`%s` %s :w%s', $name, $condition, $name);
+                    $class->col_and_val[':w' . $name] = $value;
+                }
+                else {
+                    $class->where = $name;
+                }
+            }
+            else {
+                
+                if ( ! $value) {
+                    $opperator = 'AND';    
+                } else {
+                    $opperator = strtoupper($value);
+                }
+                
+                if ($class->where) {
+                    $class->where .= ' ' . $opperator . ' ';
+                }
+                
+                $condition = explode(',', $condition);
+                $key = 0;
+                $data = array_map(
+                    function ($name, $value) use ($opperator, $class, $condition, &$key) {
+                        
+                        if (isset($condition[$key])) {
+                            $condition = trim($condition[$key]);
+                        } else {
+                            $condition = '=';
+                        }
+                        
+                        $class->where .= sprintf(
+                            '`%s` %s :w%s %s ', $name, $condition, $name, $opperator
+                        );            
+                        //$class->where .= '`' . $name . '` = :w'. $name . ' ' . $opperator . ' ';
+                        $class->col_and_val[':w' . $name] = $value;
+                        $key++;
+                        
+                    }, array_keys($name), array_values($name)
+                );
+                
+                $class->where = rtrim($class->where, 'AND ');
+                $class->where = rtrim($class->where, 'OR ');
+            }
+        }
+        
+        public static function andWhere($name, $value, $condition, $class)
+        {
+            if ($class->where) {
+                static::where(array($name => $value), null, $condition, $class);
+            }
+            else {
+                throw new \Exception(
+                    'Update::where method must be called first'
+                );
+            }
+        }
+        
+        public static function orWhere($name, $value, $condition, $class)
+        {
+            if ($class->where) {
+                static::where(array($name => $value), 'OR', $condition, $class);
+            }
+            else {
+                throw new \Exception(
+                    'Update::where method must be called first'
+                );
+            }
+        }
     }
 }
 
@@ -243,668 +243,668 @@ namespace Auxiliary {
 */
 namespace Sql {
     
-    use PDOConnection\DB as DB;	
-	
-	
-	class Select
-	{
-		private $table = null;
-		
-		public $where = null;
-		
-		private $order = null;
-		
-		private $limit = null;
-		
-		private $columns = array();
-		
-		public $col_and_val = array();
-		
-		private $map = null;
-		
-		private $built = null;
-		
-		public $called = array();
-		
-		private $instantiated = null;
-		
-		public function __construct($columnNames = '*', $map = null)
-		{
-			if (is_array($columnNames)) {
-				$this->columns = $columnNames;
-			}
-			else {
-				$this->columns = str_replace(' ', '', 
-					trim($columnNames, ',')
-				);
-				$this->columns = explode(',', $this->columns);
-			}
-			$this->map = $map;
-		}
-		
-		public function from($tableNames)
-		{
-			$this->table = $tableNames;
-			return $this;
-		}
-		
-		public function where($name, $value = null, $condition = '=')
-		{
-			\Auxiliary\Methods::where($name, $value, $condition, $this);
-			return $this;
-		}
-		
-		public function andWhere($name, $value, $condition = '=')
-		{
-			\Auxiliary\Methods::andWhere($name, $value, $condition, $this);
-			return $this;
-		}
-		
-		public function orWhere($name, $value, $condition = '=')
-		{
-			\Auxiliary\Methods::orWhere($name, $value, $condition, $this);
-			return $this;
-		}
-		
-		public function order($columnName, $orderType = 'ASC')
-		{
-			$this->order = $columnName . ' ' . $orderType;
-			return $this;
-		}
-		
-		public function limit($limit)
-		{
-			$this->limit = $limit;
-			return $this;
-		}
-		
-		private function buildQuery()
-		{	
-			$new_column = null;
-			
-			if ($this->columns == '*') {
-				$new_column = '*';
-			}
-			else {
-				
-				foreach ($this->columns as $column) {
-		
-					$pattern = '/^count\:(.*)|count\((.*)\)|count$/i';
-					if (preg_match($pattern, $column, $matched)) {
-						
-						$count = null;
-						if (isset($matched[1]) && trim($matched[1]) != false) {
-							$count = trim($matched[1]);
-						}
-						elseif (isset($matched[2]) && trim($matched[2]) != false) {
-							$count = trim($matched[2]);
-						}
-						else {
-							$count = '*';
-						}
-						$new_column .= sprintf('COUNT(%s)', $count);
-					}
-					else {
-						$new_column .= sprintf('`%s`, ', $column);	
-					}
-				}
-				$new_column = rtrim($new_column, ', ');
-			}
-			
-			$query = 'SELECT ' . $new_column;
-			$query .= ' FROM ' . $this->table;
-			
-			if ($this->where) {
-				$query .= ' WHERE ' . $this->where;
-			}
-			if ($this->order) {
-				$query .= ' ORDER BY ' . $this->order;
-			}
-			if ($this->limit) {
-				$query .= ' LIMIT ' . $this->limit;
-			}
-			$this->built = $query;
-		}
-		
-		public function toString($forQuery = false)
-		{
-			if ( ! $this->built) {
-				$this->buildQuery();	
-			}
-			return \Auxiliary\Methods::Stringfy(
-				$this->built,
-				$this->col_and_val,
-				$forQuery
-			);
-		}
-		
-		public function commit($from = null)
-		{
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			try {
-				$query = DB::$conn->prepare($this->built);
-				
-				if ($query->execute($this->col_and_val)) {
-					
-					$result = null;
-					if ($this->map) {
-						if ($this->map === 'object') {
-							$result = $query->fetchAll(\PDO::FETCH_OBJ);
-						}
-						elseif (is_object($this->map)) {
-							$stm = $query->fetchAll(\PDO::FETCH_ASSOC);
-							foreach ($stm as $values) {
-								foreach ($values as $key => $value) {
-									if (property_exists($this->map, $key)) {
-										$this->map->{$key}[] = $value;	
-									}
-								}
-							}
-						}
-						else {
-							$type = null;
-							if (strpos($this->map, ':') !== false) {
-								list($type, $this->map) = explode(':', trim($this->map));
-							}
-							if (strcasecmp('function', $type) == 0) {
-								$type = '\PDO::FETCH_FUNC';	
-							} else {
-								$type = '\PDO::FETCH_CLASS';
-							}
-							$query->fetchAll(constant($type), $this->map);
-						}
-					}
-					else {
-						$result = $query->fetchAll(\PDO::FETCH_ASSOC);
-					}
-					
-					if ($result) {			
-						if ($from === null) {
-							foreach ($result as $values) {
-								foreach ($values as $key => $value) {
-									$this->{$key}[] = $value;
-								}
-							}
-							return $result;	
-						}
-						else {
-							if (isset($result[$from])) {
-								foreach ($result[$from] as $name => $value) {
-									$this->{$name} = $value;	
-								}
-								return $result[$from];
-							}
-							else {
-								throw new \Exception(
-									'You are trying to access an unkown offset(' . $from . ')'
-								);
-							}
-						}
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-		}
-		
-	}
-	
-	class InsertInto
-	{
-		private $table = null;
-		
-		private $col_and_val = array();
-		
-		private $columns = array();
-		
-		private $built = null;
-		
-		private $last_was_col = false;
-		
-		private $select = null;
-		
-		private $instantiated = null;
-		
-		private $duplicate = null;
-		
-		public function __construct($tableName)
-		{
-			$this->table = $tableName;
-		}
-		
-		public function __set($name, $value)
-		{
-			$this->columns[] = $name;
-			$this->col_and_val[':i' .$name] = $value;
-			return $this;
-		}
-		
-		public function __call($name, $arguments)
-		{
-			$classNamespace = __NAMESPACE__ . '\\' . $name;
-			if (class_exists($classNamespace)) {
-				
-				if ( ! isset($arguments[1])) {
-					$arguments[1] = null;
-				}
-				$refrence =  new $classNamespace($arguments[0], $arguments[1]);
-				$refrence->called = array('init');
-				$this->instantiated = $refrence;
-				return $refrence;
-			}
-			else {
-				throw new \Exception(
-					'Class \'' . $classNamespace . '\' not found'
-				);	
-			}
-		}
-		
-		public function values($name, $value = null)
-		{
-			if ($this->last_was_col) {
-				if ( ! is_array($name)) {
-					$name = func_get_args();
-				}
-				foreach ($name as $key => $value) {
-					$this->col_and_val[':i' . $this->columns[$key]] = $value;
-				}
-				$this->last_was_col = false;
-			}
-			elseif ( ! $this->col_and_val) {
-				if (is_string($name) && $value) {
-					$this->columns[] = $name;
-					$this->col_and_val[':i' . $name] = $value;
-				}
-				else {	
-					$this->columns = array_keys($name);
-					
-					$data = array_map(function ($name, $value) {					
-						$this->col_and_val[':i' . $name] = $value;
-					}, array_keys($name), array_values($name));
-				}
-			}
-			return $this;
-		}
-		
-		public function json($jsonObject, $isFile = false)
-		{
-			if ($isFile) {
-				$jsonObject = file_get_contents($jsonObject);	
-			}
-			$this->values(json_decode($jsonObject, true));
-			return $this;
-		}
-		
-		public function column($columnNames)
-		{
-			$this->last_was_col = true;
-			if (is_array($columnNames)) {
-				$this->columns = $columnNames;
-			}
-			else {
-				$this->columns = str_replace(' ', '', $columnNames);
-				$this->columns = explode(',', $this->columns);
-			}
-			return $this;
-		}
-		
-		public function onDuplicate($name, $value)
-		{
-			if ( ! is_array($name)) {
-				
-				if (strpos($value, 'val:') !== false) {
-					list($null, $column) = explode('val:', $value);
-					$this->duplicate = '`' . $name . '` = VALUES(' . $column . ')';
-				}
-				elseif (preg_match('/values\(\w+\)/i', $value, $column)) {
-					$this->duplicate = '`' . $name . '` = ' . $value;
-				}
-				else {
-					$this->duplicate = '`' . $name . '` = ' . $value;
-				}
-			}
-			else {
-				
-			}
-		}
-		
-		private function buildQuery()
-		{	
-			$query = 'INSERT INTO ' . $this->table;
-			$query .= ' (`' . implode('`, `', $this->columns) . '`)';
-			
-			if ($this->instantiated) {
-				$new_data = $this->instantiated->toString(true);
-				$query .= ' ' . $new_data['query'];
-				$this->col_and_val = $new_data['data'];
-			}
-			else {
-				$query .= ' VALUES (:i' . implode(', :i', $this->columns) . ')';
-				$query .= ' (`' . implode('`, `', $this->columns) . '`)';
-			}
-			
-			if ($this->duplicate) {
-				$query .= ' ON DUPLICATE KEY UPDATE' . $this->duplicate;
-			}
-			$this->built = $query;
-		}
-		
-		public function toString($forQuery = false)
-		{
-			if ( ! $this->built) {
-				$this->buildQuery();	
-			}
-			return \Auxiliary\Methods::Stringfy(
-				$this->built,
-				$this->col_and_val,
-				$forQuery
-			);
-		}
-		
-		public function commit($lastID = false)
-		{
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			try {
-				$query = DB::$conn->prepare($this->built);
+    use PDOConnection\DB as DB;    
+    
+    
+    class Select
+    {
+        private $table = null;
+        
+        public $where = null;
+        
+        private $order = null;
+        
+        private $limit = null;
+        
+        private $columns = array();
+        
+        public $col_and_val = array();
+        
+        private $map = null;
+        
+        private $built = null;
+        
+        public $called = array();
+        
+        private $instantiated = null;
+        
+        public function __construct($columnNames = '*', $map = null)
+        {
+            if (is_array($columnNames)) {
+                $this->columns = $columnNames;
+            }
+            else {
+                $this->columns = str_replace(' ', '', 
+                    trim($columnNames, ',')
+                );
+                $this->columns = explode(',', $this->columns);
+            }
+            $this->map = $map;
+        }
+        
+        public function from($tableNames)
+        {
+            $this->table = $tableNames;
+            return $this;
+        }
+        
+        public function where($name, $value = null, $condition = '=')
+        {
+            \Auxiliary\Methods::where($name, $value, $condition, $this);
+            return $this;
+        }
+        
+        public function andWhere($name, $value, $condition = '=')
+        {
+            \Auxiliary\Methods::andWhere($name, $value, $condition, $this);
+            return $this;
+        }
+        
+        public function orWhere($name, $value, $condition = '=')
+        {
+            \Auxiliary\Methods::orWhere($name, $value, $condition, $this);
+            return $this;
+        }
+        
+        public function order($columnName, $orderType = 'ASC')
+        {
+            $this->order = $columnName . ' ' . $orderType;
+            return $this;
+        }
+        
+        public function limit($limit)
+        {
+            $this->limit = $limit;
+            return $this;
+        }
+        
+        private function buildQuery()
+        {    
+            $new_column = null;
+            
+            if ($this->columns == '*') {
+                $new_column = '*';
+            }
+            else {
+                
+                foreach ($this->columns as $column) {
+        
+                    $pattern = '/^count\:(.*)|count\((.*)\)|count$/i';
+                    if (preg_match($pattern, $column, $matched)) {
+                        
+                        $count = null;
+                        if (isset($matched[1]) && trim($matched[1]) != false) {
+                            $count = trim($matched[1]);
+                        }
+                        elseif (isset($matched[2]) && trim($matched[2]) != false) {
+                            $count = trim($matched[2]);
+                        }
+                        else {
+                            $count = '*';
+                        }
+                        $new_column .= sprintf('COUNT(%s)', $count);
+                    }
+                    else {
+                        $new_column .= sprintf('`%s`, ', $column);    
+                    }
+                }
+                $new_column = rtrim($new_column, ', ');
+            }
+            
+            $query = 'SELECT ' . $new_column;
+            $query .= ' FROM ' . $this->table;
+            
+            if ($this->where) {
+                $query .= ' WHERE ' . $this->where;
+            }
+            if ($this->order) {
+                $query .= ' ORDER BY ' . $this->order;
+            }
+            if ($this->limit) {
+                $query .= ' LIMIT ' . $this->limit;
+            }
+            $this->built = $query;
+        }
+        
+        public function toString($forQuery = false)
+        {
+            if ( ! $this->built) {
+                $this->buildQuery();    
+            }
+            return \Auxiliary\Methods::Stringfy(
+                $this->built,
+                $this->col_and_val,
+                $forQuery
+            );
+        }
+        
+        public function commit($from = null)
+        {
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            try {
+                $query = DB::$conn->prepare($this->built);
+                
+                if ($query->execute($this->col_and_val)) {
+                    
+                    $result = null;
+                    if ($this->map) {
+                        if ($this->map === 'object') {
+                            $result = $query->fetchAll(\PDO::FETCH_OBJ);
+                        }
+                        elseif (is_object($this->map)) {
+                            $stm = $query->fetchAll(\PDO::FETCH_ASSOC);
+                            foreach ($stm as $values) {
+                                foreach ($values as $key => $value) {
+                                    if (property_exists($this->map, $key)) {
+                                        $this->map->{$key}[] = $value;    
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            $type = null;
+                            if (strpos($this->map, ':') !== false) {
+                                list($type, $this->map) = explode(':', trim($this->map));
+                            }
+                            if (strcasecmp('function', $type) == 0) {
+                                $type = '\PDO::FETCH_FUNC';    
+                            } else {
+                                $type = '\PDO::FETCH_CLASS';
+                            }
+                            $query->fetchAll(constant($type), $this->map);
+                        }
+                    }
+                    else {
+                        $result = $query->fetchAll(\PDO::FETCH_ASSOC);
+                    }
+                    
+                    if ($result) {            
+                        if ($from === null) {
+                            foreach ($result as $values) {
+                                foreach ($values as $key => $value) {
+                                    $this->{$key}[] = $value;
+                                }
+                            }
+                            return $result;    
+                        }
+                        else {
+                            if (isset($result[$from])) {
+                                foreach ($result[$from] as $name => $value) {
+                                    $this->{$name} = $value;    
+                                }
+                                return $result[$from];
+                            }
+                            else {
+                                throw new \Exception(
+                                    'You are trying to access an unkown offset(' . $from . ')'
+                                );
+                            }
+                        }
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+        }
+        
+    }
+    
+    class InsertInto
+    {
+        private $table = null;
+        
+        private $col_and_val = array();
+        
+        private $columns = array();
+        
+        private $built = null;
+        
+        private $last_was_col = false;
+        
+        private $select = null;
+        
+        private $instantiated = null;
+        
+        private $duplicate = null;
+        
+        public function __construct($tableName)
+        {
+            $this->table = $tableName;
+        }
+        
+        public function __set($name, $value)
+        {
+            $this->columns[] = $name;
+            $this->col_and_val[':i' .$name] = $value;
+            return $this;
+        }
+        
+        public function __call($name, $arguments)
+        {
+            $classNamespace = __NAMESPACE__ . '\\' . $name;
+            if (class_exists($classNamespace)) {
+                
+                if ( ! isset($arguments[1])) {
+                    $arguments[1] = null;
+                }
+                $refrence =  new $classNamespace($arguments[0], $arguments[1]);
+                $refrence->called = array('init');
+                $this->instantiated = $refrence;
+                return $refrence;
+            }
+            else {
+                throw new \Exception(
+                    'Class \'' . $classNamespace . '\' not found'
+                );    
+            }
+        }
+        
+        public function values($name, $value = null)
+        {
+            if ($this->last_was_col) {
+                if ( ! is_array($name)) {
+                    $name = func_get_args();
+                }
+                foreach ($name as $key => $value) {
+                    $this->col_and_val[':i' . $this->columns[$key]] = $value;
+                }
+                $this->last_was_col = false;
+            }
+            elseif ( ! $this->col_and_val) {
+                if (is_string($name) && $value) {
+                    $this->columns[] = $name;
+                    $this->col_and_val[':i' . $name] = $value;
+                }
+                else {    
+                    $this->columns = array_keys($name);
+                    
+                    $data = array_map(function ($name, $value) {                    
+                        $this->col_and_val[':i' . $name] = $value;
+                    }, array_keys($name), array_values($name));
+                }
+            }
+            return $this;
+        }
+        
+        public function json($jsonObject, $isFile = false)
+        {
+            if ($isFile) {
+                $jsonObject = file_get_contents($jsonObject);    
+            }
+            $this->values(json_decode($jsonObject, true));
+            return $this;
+        }
+        
+        public function column($columnNames)
+        {
+            $this->last_was_col = true;
+            if (is_array($columnNames)) {
+                $this->columns = $columnNames;
+            }
+            else {
+                $this->columns = str_replace(' ', '', $columnNames);
+                $this->columns = explode(',', $this->columns);
+            }
+            return $this;
+        }
+        
+        public function onDuplicate($name, $value)
+        {
+            if ( ! is_array($name)) {
+                
+                if (strpos($value, 'val:') !== false) {
+                    list($null, $column) = explode('val:', $value);
+                    $this->duplicate = '`' . $name . '` = VALUES(' . $column . ')';
+                }
+                elseif (preg_match('/values\(\w+\)/i', $value, $column)) {
+                    $this->duplicate = '`' . $name . '` = ' . $value;
+                }
+                else {
+                    $this->duplicate = '`' . $name . '` = ' . $value;
+                }
+            }
+            else {
+                
+            }
+        }
+        
+        private function buildQuery()
+        {    
+            $query = 'INSERT INTO ' . $this->table;
+            $query .= ' (`' . implode('`, `', $this->columns) . '`)';
+            
+            if ($this->instantiated) {
+                $new_data = $this->instantiated->toString(true);
+                $query .= ' ' . $new_data['query'];
+                $this->col_and_val = $new_data['data'];
+            }
+            else {
+                $query .= ' VALUES (:i' . implode(', :i', $this->columns) . ')';
+                $query .= ' (`' . implode('`, `', $this->columns) . '`)';
+            }
+            
+            if ($this->duplicate) {
+                $query .= ' ON DUPLICATE KEY UPDATE' . $this->duplicate;
+            }
+            $this->built = $query;
+        }
+        
+        public function toString($forQuery = false)
+        {
+            if ( ! $this->built) {
+                $this->buildQuery();    
+            }
+            return \Auxiliary\Methods::Stringfy(
+                $this->built,
+                $this->col_and_val,
+                $forQuery
+            );
+        }
+        
+        public function commit($lastID = false)
+        {
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            try {
+                $query = DB::$conn->prepare($this->built);
 
-				if ($query->execute($this->col_and_val)) {
-					if ($lastID) {
-						return DB::$conn->lastInsertId();
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-		}
-	}
-	
-	class Update
-	{
-		private $table = null;
-		
-		public $where = null;
-		
-		private $columns = array();
-		
-		public $col_and_val = array();
-		
-		private $built = null;
-		
-		private $set = null;
-		
-		
-		public function __construct($tableNames)
-		{
-			$this->table = $tableNames;
-		}
-		
-		public function set($name, $value = null)
-		{
-			if ( ! is_array($name)) {
-				if ($value) {
-					$this->set = '`' . $name . '` = :u'. $name;
-					$this->col_and_val[':u' . $name] = $value;
-				}
-				else {
-					$this->where = $name;
-				}
-			}
-			else {
-				$data = array_map(function ($name, $value) {					
-					$this->set .= '`' . $name . '` = :u'. $name . ', ';
-					$this->col_and_val[':u' . $name] = $value;
-				}, array_keys($name), array_values($name));
-				
-				$this->set = rtrim($this->set, ', ');
-			}
-			return $this;
-		}
-		
-		public function __set($name, $value)
-		{
-			if ($this->set) {
-				$this->set .= ', ';
-			}
-			$this->set .= '`' . $name . '` = :u'. $name;
-			
-			$this->col_and_val[':u' . $name] = $value;
-		}
-		
-		public function where($name, $value = null)
-		{
-			\Auxiliary\Methods::where($name, $value, $this);
-			return $this;
-		}
-		
-		public function andWhere($name, $value)
-		{
-			\Auxiliary\Methods::andWhere($name, $value, $this);
-			return $this;
-		}
-		
-		public function orWhere($name, $value)
-		{
-			\Auxiliary\Methods::orWhere($name, $value, $this);
-			return $this;
-		}
-		
-		public function json($jsonObject, $isFile = false)
-		{
-			if ($isFile) {
-				$jsonObject = file_get_contents($jsonObject);	
-			}
-			$this->set(json_decode($jsonObject, true));
-			return $this;
-		}
-		
-		private function buildQuery()
-		{	
-			$query = 'UPDATE ' . $this->table;
-			$query .= ' SET ' . $this->set;
-			
-			if ($this->where) {
-				$query .= ' WHERE ' . $this->where;
-			}
-			
-			$this->built = $query;
-		}
-		
-		public function toString($forQuery = false)
-		{
-			if ( ! $this->built) {
-				$this->buildQuery();	
-			}
-			return \Auxiliary\Methods::Stringfy(
-				$this->built,
-				$this->col_and_val,
-				$forQuery
-			);
-		}
-		
-		public function commit($rowCount = false)
-		{	
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			try {
-				$query = DB::$conn->prepare($this->built);
-				if ($query->execute($this->col_and_val)) {
-					if ($rowCount) {
-						return $query->rowCount();
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-			
-		}
-		
-	}
-	
-	class deleteFrom
-	{
-		private $table = null;
-		
-		public $where = null;
-		
-		private $columns = array();
-		
-		public $col_and_val = array();
-		
-		private $built = null;
+                if ($query->execute($this->col_and_val)) {
+                    if ($lastID) {
+                        return DB::$conn->lastInsertId();
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+        }
+    }
+    
+    class Update
+    {
+        private $table = null;
+        
+        public $where = null;
+        
+        private $columns = array();
+        
+        public $col_and_val = array();
+        
+        private $built = null;
+        
+        private $set = null;
+        
+        
+        public function __construct($tableNames)
+        {
+            $this->table = $tableNames;
+        }
+        
+        public function set($name, $value = null)
+        {
+            if ( ! is_array($name)) {
+                if ($value) {
+                    $this->set = '`' . $name . '` = :u'. $name;
+                    $this->col_and_val[':u' . $name] = $value;
+                }
+                else {
+                    $this->where = $name;
+                }
+            }
+            else {
+                $data = array_map(function ($name, $value) {                    
+                    $this->set .= '`' . $name . '` = :u'. $name . ', ';
+                    $this->col_and_val[':u' . $name] = $value;
+                }, array_keys($name), array_values($name));
+                
+                $this->set = rtrim($this->set, ', ');
+            }
+            return $this;
+        }
+        
+        public function __set($name, $value)
+        {
+            if ($this->set) {
+                $this->set .= ', ';
+            }
+            $this->set .= '`' . $name . '` = :u'. $name;
+            
+            $this->col_and_val[':u' . $name] = $value;
+        }
+        
+        public function where($name, $value = null)
+        {
+            \Auxiliary\Methods::where($name, $value, $this);
+            return $this;
+        }
+        
+        public function andWhere($name, $value)
+        {
+            \Auxiliary\Methods::andWhere($name, $value, $this);
+            return $this;
+        }
+        
+        public function orWhere($name, $value)
+        {
+            \Auxiliary\Methods::orWhere($name, $value, $this);
+            return $this;
+        }
+        
+        public function json($jsonObject, $isFile = false)
+        {
+            if ($isFile) {
+                $jsonObject = file_get_contents($jsonObject);    
+            }
+            $this->set(json_decode($jsonObject, true));
+            return $this;
+        }
+        
+        private function buildQuery()
+        {    
+            $query = 'UPDATE ' . $this->table;
+            $query .= ' SET ' . $this->set;
+            
+            if ($this->where) {
+                $query .= ' WHERE ' . $this->where;
+            }
+            
+            $this->built = $query;
+        }
+        
+        public function toString($forQuery = false)
+        {
+            if ( ! $this->built) {
+                $this->buildQuery();    
+            }
+            return \Auxiliary\Methods::Stringfy(
+                $this->built,
+                $this->col_and_val,
+                $forQuery
+            );
+        }
+        
+        public function commit($rowCount = false)
+        {    
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            try {
+                $query = DB::$conn->prepare($this->built);
+                if ($query->execute($this->col_and_val)) {
+                    if ($rowCount) {
+                        return $query->rowCount();
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+            
+        }
+        
+    }
+    
+    class deleteFrom
+    {
+        private $table = null;
+        
+        public $where = null;
+        
+        private $columns = array();
+        
+        public $col_and_val = array();
+        
+        private $built = null;
 
-		
-		public function __construct($tableName)
-		{
-			$this->table = $tableName;
-		}
-		
-		public function where($name, $value = null)
-		{
-			\Auxiliary\Methods::where($name, $value, $this);
-			return $this;
-		}
-		
-		public function andWhere($name, $value)
-		{
-			\Auxiliary\Methods::andWhere($name, $value, $this);
-			return $this;
-		}
-		
-		public function orWhere($name, $value)
-		{
-			\Auxiliary\Methods::orWhere($name, $value, $this);
-			return $this;
-		}
-				
-		private function buildQuery()
-		{	
-			$query = 'DELETE FROM ' . $this->table;
-			if ($this->where) {
-				$query .= ' WHERE ' . $this->where;
-			}
-			
-			$this->built = $query;
-		}
-		
-		public function toString($forQuery = false)
-		{
-			if ( ! $this->built) {
-				$this->buildQuery();	
-			}
-			return \Auxiliary\Methods::Stringfy(
-				$this->built,
-				$this->col_and_val,
-				$forQuery
-			);
-		}
-		
-		public function commit($rowCount = false)
-		{	
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			try {
-				$query = DB::$conn->prepare($this->built);
-				if ($query->execute($this->col_and_val)) {
-					if ($rowCount) {
-						return $query->rowCount();
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-			
-		}
-	}
-	
-	class Query
-	{
-		public $col_and_val = null;
-		private $built = null;
-		public $called = array();
-		private $instantiated = null;
-		
-		
-		public function toString($forQuery = false)
-		{
-			return \Auxiliary\Methods::Stringfy(
-				$this->built,
-				$this->col_and_val,
-				$forQuery
-			);
-		}
-		
-		private function buildQuery()
-		{	
-			if ( ! $this->built) {
-				$this->buildQuery();	
-			}
-			if ( ! empty($this->called) && ! $this->instantiated) {
-				$this->external = array(
-					'object' => $this,
-					'query'	 => $query
-				);
-			}
-			$this->built = $query;
-		}
-		
-		public function __construct($queryString)
-		{
-			$this->built = $queryString;
-		}
-		
-		public function commit($method = null, $casting = false)
-		{
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			try {
-				$query = DB::$conn->prepare($this->built);
+        
+        public function __construct($tableName)
+        {
+            $this->table = $tableName;
+        }
+        
+        public function where($name, $value = null)
+        {
+            \Auxiliary\Methods::where($name, $value, $this);
+            return $this;
+        }
+        
+        public function andWhere($name, $value)
+        {
+            \Auxiliary\Methods::andWhere($name, $value, $this);
+            return $this;
+        }
+        
+        public function orWhere($name, $value)
+        {
+            \Auxiliary\Methods::orWhere($name, $value, $this);
+            return $this;
+        }
+                
+        private function buildQuery()
+        {    
+            $query = 'DELETE FROM ' . $this->table;
+            if ($this->where) {
+                $query .= ' WHERE ' . $this->where;
+            }
+            
+            $this->built = $query;
+        }
+        
+        public function toString($forQuery = false)
+        {
+            if ( ! $this->built) {
+                $this->buildQuery();    
+            }
+            return \Auxiliary\Methods::Stringfy(
+                $this->built,
+                $this->col_and_val,
+                $forQuery
+            );
+        }
+        
+        public function commit($rowCount = false)
+        {    
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            try {
+                $query = DB::$conn->prepare($this->built);
+                if ($query->execute($this->col_and_val)) {
+                    if ($rowCount) {
+                        return $query->rowCount();
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+            
+        }
+    }
+    
+    class Query
+    {
+        public $col_and_val = null;
+        private $built = null;
+        public $called = array();
+        private $instantiated = null;
+        
+        
+        public function toString($forQuery = false)
+        {
+            return \Auxiliary\Methods::Stringfy(
+                $this->built,
+                $this->col_and_val,
+                $forQuery
+            );
+        }
+        
+        private function buildQuery()
+        {    
+            if ( ! $this->built) {
+                $this->buildQuery();    
+            }
+            if ( ! empty($this->called) && ! $this->instantiated) {
+                $this->external = array(
+                    'object' => $this,
+                    'query'     => $query
+                );
+            }
+            $this->built = $query;
+        }
+        
+        public function __construct($queryString)
+        {
+            $this->built = $queryString;
+        }
+        
+        public function commit($method = null, $casting = false)
+        {
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            try {
+                $query = DB::$conn->prepare($this->built);
 
-				if ($query->execute($this->col_and_val)) {
-					if ($method) {
-						$argument = null;
-						if (strpos($method, '(') !== false) {
-							list($method, $argument) = explode('(', rtrim($method, ')'));										
-						}
-						
-						if (method_exists($query, $method)) {	
-							if ( ! $casting) {
-								return $query->{$method}(@constant($argument));
-							}
-							else {
-								return $query->{$method}($casting);
-							}
-						}
-						elseif (method_exists(DB::$conn, $method)) {
-							if ( ! $castiing) {
-								return DB::$conn->{$method}(@constant($argument));
-							}
-							else {
-								return DB::$conn->{$method}($casting);
-							}
-						}
-						else {
-							throw new \Exception(
-								sprintf('Method \'%s\' not Found', $method)
-							);	
-						}
-					}
-				}
-			} catch (\PDOException $e) {  
-			   \Exception\DBException::init($e);  
-			}
-		}
-	}
-	
+                if ($query->execute($this->col_and_val)) {
+                    if ($method) {
+                        $argument = null;
+                        if (strpos($method, '(') !== false) {
+                            list($method, $argument) = explode('(', rtrim($method, ')'));                                        
+                        }
+                        
+                        if (method_exists($query, $method)) {    
+                            if ( ! $casting) {
+                                return $query->{$method}(@constant($argument));
+                            }
+                            else {
+                                return $query->{$method}($casting);
+                            }
+                        }
+                        elseif (method_exists(DB::$conn, $method)) {
+                            if ( ! $castiing) {
+                                return DB::$conn->{$method}(@constant($argument));
+                            }
+                            else {
+                                return DB::$conn->{$method}($casting);
+                            }
+                        }
+                        else {
+                            throw new \Exception(
+                                sprintf('Method \'%s\' not Found', $method)
+                            );    
+                        }
+                    }
+                }
+            } catch (\PDOException $e) {  
+               \Exception\DBException::init($e);  
+            }
+        }
+    }
+    
 }
