@@ -163,24 +163,24 @@ namespace Auxiliary {
             return $string;
         }
         
-		private static function uniqueKey(&$key, &$array, $value = null)
-		{	
-			if (array_key_exists(':' . $key, $array)) {
-				$key = 'w' . $key;
-				static::uniqueKey($key, $array, $value);
-			}
-			else {
-				$array[':' . $key] = $value;
-			}
-		}
-		
+        private static function uniqueKey(&$key, &$array, $value = null)
+        {    
+            if (array_key_exists(':' . $key, $array)) {
+                $key = 'w' . $key;
+                static::uniqueKey($key, $array, $value);
+            }
+            else {
+                $array[':' . $key] = $value;
+            }
+        }
+        
         public static function where($name, $value, $condition, $class)
         {
             if ( ! is_array($name)) {
                 if ($value) {
-					
-					$key = 'w' . $name;
-					static::uniqueKey($key, $class->col_and_val, $value);
+                    
+                    $key = 'w' . $name;
+                    static::uniqueKey($key, $class->col_and_val, $value);
                     $class->where = sprintf('`%s` %s :%s', $name, $condition, $key);
                 }
                 else {
@@ -201,7 +201,7 @@ namespace Auxiliary {
                 
                 $condition = explode(',', $condition);
                 $key = 0;
-				
+                
                 $data = array_map(
                     function ($name, $value) use ($opperator, $class, $condition, &$key) {
                         
@@ -211,9 +211,9 @@ namespace Auxiliary {
                             $condition = '=';
                         }
                         
-						//$class->where  = `columnName` (=|>|<..) :wcolumnName (AND|OR..)
-						$key = 'w' . $name;
-						static::uniqueKey($key, $class->col_and_val, $value);
+                        //$class->where  = `columnName` (=|>|<..) :wcolumnName (AND|OR..)
+                        $key = 'w' . $name;
+                        static::uniqueKey($key, $class->col_and_val, $value);
                         $class->where .= sprintf(
                             '`%s` %s :%s %s ', $name, $condition, $key, $opperator
                         );
@@ -282,10 +282,10 @@ namespace Sql {
         public $called = array();
         
         private $instantiated = null;
-		
-		public $distinct = false;
-		
-		public $union = null;
+        
+        public $distinct = false;
+        
+        public $union = null;
         
         public function __construct($columnNames = '*', $map = null)
         {
@@ -298,61 +298,61 @@ namespace Sql {
                 );
                 $this->columns = explode(',', $this->columns);
             }
-           	
-			if ( ! $this->map) {
-				$this->map = $map;
-			}
+               
+            if ( ! $this->map) {
+                $this->map = $map;
+            }
         }
         
-		public function __call($name, $arguments)
-		{
-			if ($name == 'select') {
-				if ( ! isset($arguments[0])) {
-					$arguments[0] = '*';
-				}
-				$this->__construct($arguments[0]);
-				return $this;
-			}
-		}
-		
-		public function union($type = null)
-		{
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			if ($type) {
-				$type = strtoupper($type);	
-			}
-			
-			$this->union .= '(' . $this->built . ') UNION ' . $type . ' ';
-			$this->built = null;
-			return $this;
-		}
-		
-		public function unionAll()
-		{
-			if (! $this->built) {
-				$this->buildQuery();
-			}
-			
-			$this->union .= '(' . $this->built . ') UNION ALL ';
-			$this->built = null;
-			return $this;
-		}
-		
+        public function __call($name, $arguments)
+        {
+            if ($name == 'select') {
+                if ( ! isset($arguments[0])) {
+                    $arguments[0] = '*';
+                }
+                $this->__construct($arguments[0]);
+                return $this;
+            }
+        }
+        
+        public function union($type = null)
+        {
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            if ($type) {
+                $type = strtoupper($type);    
+            }
+            
+            $this->union .= '(' . $this->built . ') UNION ' . $type . ' ';
+            $this->built = null;
+            return $this;
+        }
+        
+        public function unionAll()
+        {
+            if (! $this->built) {
+                $this->buildQuery();
+            }
+            
+            $this->union .= '(' . $this->built . ') UNION ALL ';
+            $this->built = null;
+            return $this;
+        }
+        
         public function from($tableNames)
         {
             $this->table = $tableNames;
             return $this;
         }
         
-		public function distinct()
-		{
-			$this->distinct = true;
-			return $this;
-		}
-		
+        public function distinct()
+        {
+            $this->distinct = true;
+            return $this;
+        }
+        
         public function where($name, $value = null, $condition = '=')
         {
             \Auxiliary\Methods::where($name, $value, $condition, $this);
@@ -386,73 +386,73 @@ namespace Sql {
         private function buildQuery()
         {    
             $new_column = null;
-			$distinct = null;
+            $distinct = null;
             
-			foreach ($this->columns as $column) {
-				
-				if ($column == '*') {
-					$new_column = '*';
-				}
-				else {
-					$pattern = '/^count\:(.*)|count\((.*)\)|count$/i';
-					if (preg_match($pattern, $column, $matched)) {
-						
-						$count = null;
-						if (isset($matched[1]) && trim($matched[1]) != false) {
-							$count = trim($matched[1]);
-						}
-						elseif (isset($matched[2]) && trim($matched[2]) != false) {
-							$count = trim($matched[2]);
-						}
-						else {
-							$count = '*';
-						}
-						$new_column .= sprintf('COUNT(%s)', $count);
-					}
-					else {
-						$new_column .= sprintf('`%s`, ', $column);	
-					}
-					
-				}
-			}
+            foreach ($this->columns as $column) {
+                
+                if ($column == '*') {
+                    $new_column = '*';
+                }
+                else {
+                    $pattern = '/^count\:(.*)|count\((.*)\)|count$/i';
+                    if (preg_match($pattern, $column, $matched)) {
+                        
+                        $count = null;
+                        if (isset($matched[1]) && trim($matched[1]) != false) {
+                            $count = trim($matched[1]);
+                        }
+                        elseif (isset($matched[2]) && trim($matched[2]) != false) {
+                            $count = trim($matched[2]);
+                        }
+                        else {
+                            $count = '*';
+                        }
+                        $new_column .= sprintf('COUNT(%s)', $count);
+                    }
+                    else {
+                        $new_column .= sprintf('`%s`, ', $column);    
+                    }
+                    
+                }
+            }
             
-			if ($this->distinct) {
-				$distinct = 'DISTINCT ';
-			}
-			$new_column = rtrim($new_column, ', ');
+            if ($this->distinct) {
+                $distinct = 'DISTINCT ';
+            }
+            $new_column = rtrim($new_column, ', ');
             $query = 'SELECT ' . $distinct . $new_column;
             $query .= ' FROM ' . $this->table;
             
             if ($this->where) {
                 $query .= ' WHERE ' . $this->where;
             }
-			
+            
             if ($this->order) {
                 $query .= ' ORDER BY ' . $this->order;
             }
-			
+            
             if ($this->limit) {
                 $query .= ' LIMIT ' . $this->limit;
             }
-			
-			$this->where = null;
-			$this->order = null;
-			$this->limit = null;
-			$this->columns = null;
-			$this->distinct = false;
-			
+            
+            $this->where = null;
+            $this->order = null;
+            $this->limit = null;
+            $this->columns = null;
+            $this->distinct = false;
+            
             $this->built = $query;
         }
         
         public function toString($forQuery = false)
         {
             if ( ! $this->built || $this->built && $this->union) {
-				$this->buildQuery();	
-			}
-			
-			if ($this->union) {
-				$this->built = $this->union . '(' . $this->built . ')';	
-			}
+                $this->buildQuery();    
+            }
+            
+            if ($this->union) {
+                $this->built = $this->union . '(' . $this->built . ')';    
+            }
             return \Auxiliary\Methods::Stringfy(
                 $this->built,
                 $this->col_and_val,
@@ -463,12 +463,12 @@ namespace Sql {
         public function commit($from = null)
         {
             if ( ! $this->built || $this->built && $this->union) {
-				$this->buildQuery();	
-			}
-			
-			if ($this->union) {
-				$this->built = $this->union . '(' . $this->built . ')';	
-			}
+                $this->buildQuery();    
+            }
+            
+            if ($this->union) {
+                $this->built = $this->union . '(' . $this->built . ')';    
+            }
             
             try {
                 $query = DB::$conn->prepare($this->built);
