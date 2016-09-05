@@ -18,10 +18,13 @@ $query->from('Product')
 	  ->union()
 	  ->select()
 	  ->from('Shop')
-	  ->where('id', 1);
+	  ->where('id', 1)
+	  ->unionAll()
+	  ->select('*')
+	  ->from('Product')
+	  ->where('id', 3);
 		    
-print_r( $query->toString(true));	  
-echo( $query->commit());
+var_dump( $query->commit()); 
 
 
 

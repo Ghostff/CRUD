@@ -336,10 +336,6 @@ namespace Sql {
 				$this->buildQuery();
 			}
 			
-			if ($type) {
-				$type = strtoupper($type);	
-			}
-			
 			$this->union .= '(' . $this->built . ') UNION ALL ';
 			$this->built = null;
 			return $this;

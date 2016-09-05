@@ -17,13 +17,14 @@ Method 2:
       
 Method 3:
     $query = new Sql\InsertInto('Product');
-	$query->values('title', 'Shoes')
-    	  ->commit();
+	$query->column('title, price, name')
+    	  ->values('Shoes', 10.99, 'FooBar')
+      	  ->commit();
           
 Method 4:
 	$query = new Sql\InsertInto('Product');
-	$query->column('title, price, name')
-    	  ->values('Shoes', 10.99, 'FooBar')
+	$query->column(['title', 'price', 'name'])
+    	  ->values(['Shoes', 10.99, 'FooBar'])
       	  ->commit();
           
 Method 5:
@@ -209,17 +210,18 @@ Method 7:
           ->commit();    
           
   Method 10:
-    $query = new Sql\Select('name');
+    $query = new Sql\Select();
     $query->from('Product')
-          ->where('name', 'chrys')
+          ->where('id', 1)
           ->union()
-          ->select('price, id')
-          ->from('shop')
-          ->union()
-          ->select('*')
-          ->from('users')
-          ->where(['name' => 'sup', 'id' => 3], 'OR', '>')
-          ->commit();  
+          ->select()
+          ->from('Shop')
+          ->where('id', 1)
+          ->unionAll()
+          ->select()
+          ->from('Product')
+          ->where('id', 3)
+          ->commit()
             
                    
  UPDATE
