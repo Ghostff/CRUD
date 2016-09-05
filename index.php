@@ -12,11 +12,17 @@ DB::Config([
 DB::init('localhost', 'tester', 'root', '');
 
 
-$query = new Sql\Select('name');
-$query->distinct = true;
+$query = new Sql\Select();
 $query->from('Product')
-	  ->where(['id' => 10, 'group' => 5], 'AND', '>,<');
-echo( $query->toString());
+	  ->where('id', 1)
+	  ->union()
+	  ->select()
+	  ->from('Shop')
+	  ->where('id', 1);
+		    
+print_r( $query->toString(true));	  
+echo( $query->commit());
+
 
 
 ?>

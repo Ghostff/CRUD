@@ -206,7 +206,21 @@ Method 7:
     $query = new Sql\Select('*');
     $query->distinct = true;
 	$query->from('Product')
-          ->commit();      
+          ->commit();    
+          
+  Method 10:
+    $query = new Sql\Select('name');
+    $query->from('Product')
+          ->where('name', 'chrys')
+          ->union()
+          ->select('price, id')
+          ->from('shop')
+          ->union()
+          ->select('*')
+          ->from('users')
+          ->where(['name' => 'sup', 'id' => 3], 'OR', '>')
+          ->commit();  
+            
                    
  UPDATE
  ----------------------------------------------------------------------------------------------------
