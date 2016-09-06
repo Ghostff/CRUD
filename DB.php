@@ -259,8 +259,7 @@ namespace Auxiliary {
 namespace Sql {
     
     use PDOConnection\DB as DB;    
-    
-    
+       
     class Select
     {
         private $table = null;
@@ -285,17 +284,19 @@ namespace Sql {
         
         public $distinct = false;
         
-        public $union = null;
+        private $union = null;
         
+		private $between = null;
+		
+		private $innerJoin = null;
+		
         public function __construct($columnNames = '*', $map = null)
         {
             if (is_array($columnNames)) {
                 $this->columns = $columnNames;
             }
             else {
-                $this->columns = str_replace(' ', '', 
-                    trim($columnNames, ',')
-                );
+                $this->columns = $columnNames;
                 $this->columns = explode(',', $this->columns);
             }
                
@@ -340,6 +341,15 @@ namespace Sql {
             $this->built = null;
             return $this;
         }
+		
+		public function innerJoin()
+		{
+			if ( ! $this->built) {
+                $this->buildQuery();
+            }
+			$this->innerJoin .= $this->built . 'INNER JOIN (';
+			return $this;
+		}
         
         public function from($tableNames)
         {
@@ -371,6 +381,12 @@ namespace Sql {
             return $this;
         }
         
+		public function between($match1, $match2)
+		{
+			$this->between = sprintf(' BETWEEN %s AND %s', $match1, $match2);
+			return $this;
+		}
+		
         public function order($columnName, $orderType = 'ASC')
         {
             $this->order = $columnName . ' ' . $orderType;
@@ -390,28 +406,55 @@ namespace Sql {
             
             foreach ($this->columns as $column) {
                 
+				$column = trim($column);
                 if ($column == '*') {
                     $new_column = '*';
                 }
                 else {
-                    $pattern = '/^count\:(.*)|count\((.*)\)|count$/i';
+					
+					$keyword = 'count|sum';
+                    $pattern = sprintf('/^(%1$s)\:(.*)|(%1$s)\((.*)\)|(%1$s)$/i', $keyword);
+					
+					$asPathern = '/as:(.*)\s*|as (.*)\s*/i';
+					if (preg_match($asPathern, $column, $matched)) {
+						$matched = (array_values(array_filter($matched)));
+
+						$column = str_replace(
+							$matched[0],
+							'AS ' . $matched[1],
+							$column
+						);
+					}
+					
                     if (preg_match($pattern, $column, $matched)) {
-                        
+						
+						$matched = array_values(array_filter($matched));
+						
                         $count = null;
-                        if (isset($matched[1]) && trim($matched[1]) != false) {
-                            $count = trim($matched[1]);
-                        }
-                        elseif (isset($matched[2]) && trim($matched[2]) != false) {
+						$clause = null;
+						
+                        if (isset($matched[2])) {
                             $count = trim($matched[2]);
-                        }
-                        else {
+                        }else {
                             $count = '*';
                         }
-                        $new_column .= sprintf('COUNT(%s)', $count);
+						$clause = strtoupper($matched[1]);
+						
+                        $new_column .= sprintf('%s(%s)', $clause, $count);
                     }
+					elseif (strpos($column, '.') !== false) {
+						$pattern = '/(.*)\.(\w+)\s*(.*)/i';
+						if (preg_match($pattern, $column, $matched)) {
+							$new_column .= sprintf(
+								'%s.`%s` %s, ', $matched[1], $matched[2], $matched[3]
+							);
+						}
+						
+						//$new_column .= sprintf('%s.`%s` %s, ', $table, $columnName, $stm);
+					}
                     else {
-                        $new_column .= sprintf('`%s`, ', $column);    
-                    }
+                        $new_column .= sprintf('`%s`, ', $column);
+					}
                     
                 }
             }
@@ -425,6 +468,9 @@ namespace Sql {
             
             if ($this->where) {
                 $query .= ' WHERE ' . $this->where;
+				if ($this->between) {
+					$query .= $this->between;	
+				}
             }
             
             if ($this->order) {
@@ -439,6 +485,7 @@ namespace Sql {
             $this->order = null;
             $this->limit = null;
             $this->columns = null;
+			$this->between = null;
             $this->distinct = false;
             
             $this->built = $query;

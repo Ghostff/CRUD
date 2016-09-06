@@ -223,7 +223,21 @@ Method 7:
           ->where('id', 3)
           ->commit()
             
-                   
+ Method 10:
+    $query = new Sql\Select();
+    $query->from('Product')
+          ->where('price')
+          ->between(100, 220)
+          ->commit()
+          
+          
+ Method 10:          
+    $query = new Sql\Select('table.name as user, table.user as:usename');
+    $query->from('Product')
+    	  ->where('price')
+    	  ->between(100, 220)
+          ->commit();
+                        
  UPDATE
  ----------------------------------------------------------------------------------------------------
  Method 1:
