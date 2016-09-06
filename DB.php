@@ -286,10 +286,10 @@ namespace Sql {
         
         private $union = null;
         
-		private $between = null;
-		
-		private $innerJoin = null;
-		
+        private $between = null;
+        
+        private $innerJoin = null;
+        
         public function __construct($columnNames = '*', $map = null)
         {
             if (is_array($columnNames)) {
@@ -341,15 +341,15 @@ namespace Sql {
             $this->built = null;
             return $this;
         }
-		
-		public function innerJoin()
-		{
-			if ( ! $this->built) {
+        
+        public function innerJoin()
+        {
+            if ( ! $this->built) {
                 $this->buildQuery();
             }
-			$this->innerJoin .= $this->built . 'INNER JOIN (';
-			return $this;
-		}
+            $this->innerJoin .= $this->built . 'INNER JOIN (';
+            return $this;
+        }
         
         public function from($tableNames)
         {
@@ -381,12 +381,12 @@ namespace Sql {
             return $this;
         }
         
-		public function between($match1, $match2)
-		{
-			$this->between = sprintf(' BETWEEN %s AND %s', $match1, $match2);
-			return $this;
-		}
-		
+        public function between($match1, $match2)
+        {
+            $this->between = sprintf(' BETWEEN %s AND %s', $match1, $match2);
+            return $this;
+        }
+        
         public function order($columnName, $orderType = 'ASC')
         {
             $this->order = $columnName . ' ' . $orderType;
@@ -406,55 +406,55 @@ namespace Sql {
             
             foreach ($this->columns as $column) {
                 
-				$column = trim($column);
+                $column = trim($column);
                 if ($column == '*') {
                     $new_column = '*';
                 }
                 else {
-					
-					$keyword = 'count|sum';
+                    
+                    $keyword = 'count|sum';
                     $pattern = sprintf('/^(%1$s)\:(.*)|(%1$s)\((.*)\)|(%1$s)$/i', $keyword);
-					
-					$asPathern = '/as:(.*)\s*|as (.*)\s*/i';
-					if (preg_match($asPathern, $column, $matched)) {
-						$matched = (array_values(array_filter($matched)));
+                    
+                    $asPathern = '/as:(.*)\s*|as (.*)\s*/i';
+                    if (preg_match($asPathern, $column, $matched)) {
+                        $matched = (array_values(array_filter($matched)));
 
-						$column = str_replace(
-							$matched[0],
-							'AS ' . $matched[1],
-							$column
-						);
-					}
-					
+                        $column = str_replace(
+                            $matched[0],
+                            'AS ' . $matched[1],
+                            $column
+                        );
+                    }
+                    
                     if (preg_match($pattern, $column, $matched)) {
-						
-						$matched = array_values(array_filter($matched));
-						
+                        
+                        $matched = array_values(array_filter($matched));
+                        
                         $count = null;
-						$clause = null;
-						
+                        $clause = null;
+                        
                         if (isset($matched[2])) {
                             $count = trim($matched[2]);
                         }else {
                             $count = '*';
                         }
-						$clause = strtoupper($matched[1]);
-						
+                        $clause = strtoupper($matched[1]);
+                        
                         $new_column .= sprintf('%s(%s)', $clause, $count);
                     }
-					elseif (strpos($column, '.') !== false) {
-						$pattern = '/(.*)\.(\w+)\s*(.*)/i';
-						if (preg_match($pattern, $column, $matched)) {
-							$new_column .= sprintf(
-								'%s.`%s` %s, ', $matched[1], $matched[2], $matched[3]
-							);
-						}
-						
-						//$new_column .= sprintf('%s.`%s` %s, ', $table, $columnName, $stm);
-					}
+                    elseif (strpos($column, '.') !== false) {
+                        $pattern = '/(.*)\.(\w+)\s*(.*)/i';
+                        if (preg_match($pattern, $column, $matched)) {
+                            $new_column .= sprintf(
+                                '%s.`%s` %s, ', $matched[1], $matched[2], $matched[3]
+                            );
+                        }
+                        
+                        //$new_column .= sprintf('%s.`%s` %s, ', $table, $columnName, $stm);
+                    }
                     else {
                         $new_column .= sprintf('`%s`, ', $column);
-					}
+                    }
                     
                 }
             }
@@ -468,9 +468,9 @@ namespace Sql {
             
             if ($this->where) {
                 $query .= ' WHERE ' . $this->where;
-				if ($this->between) {
-					$query .= $this->between;	
-				}
+                if ($this->between) {
+                    $query .= $this->between;    
+                }
             }
             
             if ($this->order) {
@@ -485,7 +485,7 @@ namespace Sql {
             $this->order = null;
             $this->limit = null;
             $this->columns = null;
-			$this->between = null;
+            $this->between = null;
             $this->distinct = false;
             
             $this->built = $query;
