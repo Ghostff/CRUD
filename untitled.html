@@ -169,8 +169,8 @@ Method 7:
         var_dump($title, $price, $name);
     }
     
-    $query = new Sql\Select('title, price, name', 'function:myFuncMap');
-    $query->from('Product')->commit(); 
+    $query = new Sql\Select('title, price, name');
+    $query->from('Product')->map('function:myFuncMap')->commit(); 
     
     //not advisable
     
@@ -188,6 +188,9 @@ Method 7:
         
     }
     $user = new user;    
+ 
+ 
+ 
      
  Method 8:
     $query = new Sql\Select('*');
@@ -210,6 +213,8 @@ Method 7:
           ->commit();    
           
   Method 10:
+  
+  	//does not use global db or autofix
     $query = new Sql\Select();
     $query->from('Product')
           ->where('id', 1)
@@ -223,7 +228,7 @@ Method 7:
           ->where('id', 3)
           ->commit()
             
- Method 10:
+ Method 11:
     $query = new Sql\Select();
     $query->from('Product')
           ->where('price')
@@ -231,12 +236,39 @@ Method 7:
           ->commit()
           
           
- Method 10:          
+ Method 12:          
     $query = new Sql\Select('table.name as user, table.user as:usename');
     $query->from('Product')
     	  ->where('price')
     	  ->between(100, 220)
           ->commit();
+          
+  Method 13:          
+	Select::find_name('foo')->commit();
+   
+   
+  Method 14:          
+   	 Select::find_or_name('foo', 'Bar')->commit();
+     
+     
+ Method 14:          
+   	 Select::find_or_name('foo', 'Bar')->count();     
+   
+   
+  Method 15:          
+    class myObject
+    {
+        public $title = null;
+        public $price = null;
+        public $name = null;
+        
+        function __construct() {
+            var_dump($this->title, $this->price, $this->name);
+        }
+    }
+    
+    Select::find_name('foo')->map('myObject')->commit();   
+      
                         
  UPDATE
  ----------------------------------------------------------------------------------------------------

@@ -82,6 +82,12 @@ namespace PDOConnection {
         // create active table if not created
         private static $force_table = false;
         
+        //holds global table name
+        public static $table = null;
+        
+        //auto fix query switch
+        public static $auto_fix = false;
+        
         
         /*
         * Update DB properties
@@ -97,13 +103,16 @@ namespace PDOConnection {
         {
             if (is_array($attribute)) {
                 if (array_key_exists('debug', $attribute)) {
-                    self::$debug = $attribute['debug'];    
+                    static::$debug = $attribute['debug'];    
                 }
                 if (array_key_exists('forceDB', $attribute)) {
-                    self::$force_DB = $attribute['forceDB'];    
+                    static::$force_DB = $attribute['forceDB'];    
                 }
                 if (array_key_exists('forceTbl', $attribute)) {
-                    self::$force_table = $attribute['forceTbl'];    
+                    static::$force_table = $attribute['forceTbl'];    
+                }
+                if (array_key_exists('autoFix', $attribute)) {
+                    static::$auto_fix = $attribute['autoFix'];    
                 }
             }
         }
@@ -120,14 +129,26 @@ namespace PDOConnection {
         public static function init($host, $DBName, $username, $password)
         {
             $pdo = new PDO('mysql:host=' . $host, $username, $password);
-            if (self::$debug) {
+            if (static::$debug) {
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             }
-            if (self::$force_DB) {
+            if (static::$force_DB) {
                 $pdo->query('CREATE DATABASE IF NOT EXISTS ' . $DBName);
             }
             $pdo->query('USE ' . $DBName);
-            self::$conn = $pdo;
+            static::$conn = $pdo;
+        }
+        
+        /*
+        * set a global table name
+        * return null
+        *
+        * @param table name
+
+        */
+        public static function setTable($tableName)
+        {
+            static::$table = $tableName;
         }
         
     }
@@ -174,36 +195,37 @@ namespace Auxiliary {
             }
         }
         
-        public static function where($name, $value, $condition, $class)
-        {
+        public static function where($name, $value, $condition, $class, $const = null)
+        {        
+            $statement = null;
             if ( ! is_array($name)) {
                 if ($value) {
                     
                     $key = 'w' . $name;
                     static::uniqueKey($key, $class->col_and_val, $value);
-                    $class->where = sprintf('`%s` %s :%s', $name, $condition, $key);
+                    $statement = sprintf('`%s` %s :%s', $name, $condition, $key);
                 }
                 else {
-                    $class->where = $name;
+                    $statement = $name;
                 }
             }
             else {
-                
                 if ( ! $value) {
                     $opperator = 'AND';    
                 } else {
                     $opperator = strtoupper($value);
                 }
                 
-                if ($class->where) {
-                    $class->where .= ' ' . $opperator . ' ';
-                }
-                
                 $condition = explode(',', $condition);
                 $key = 0;
                 
                 $data = array_map(
-                    function ($name, $value) use ($opperator, $class, $condition, &$key) {
+                    function ($name, $value)
+                    use ($opperator, $class, $condition, &$statement, &$key, $const) {
+                        
+                        if ($const && is_numeric($name)) {
+                            $name = $const;
+                        }
                         
                         if (isset($condition[$key])) {
                             $condition = trim($condition[$key]);
@@ -211,10 +233,10 @@ namespace Auxiliary {
                             $condition = '=';
                         }
                         
-                        //$class->where  = `columnName` (=|>|<..) :wcolumnName (AND|OR..)
+                        //$statement  = `columnName` (=|>|<..) :wcolumnName (AND|OR..)
                         $key = 'w' . $name;
                         static::uniqueKey($key, $class->col_and_val, $value);
-                        $class->where .= sprintf(
+                        $statement .= sprintf(
                             '`%s` %s :%s %s ', $name, $condition, $key, $opperator
                         );
                         $key++;
@@ -222,33 +244,10 @@ namespace Auxiliary {
                     }, array_keys($name), array_values($name)
                 );
                 
-                $class->where = rtrim($class->where, 'AND ');
-                $class->where = rtrim($class->where, 'OR ');
+                $statement = rtrim($statement, 'AND ');
+                $statement = rtrim($statement, 'OR ');
             }
-        }
-        
-        public static function andWhere($name, $value, $condition, $class)
-        {
-            if ($class->where) {
-                static::where(array($name => $value), null, $condition, $class);
-            }
-            else {
-                throw new \Exception(
-                    'Update::where method must be called first'
-                );
-            }
-        }
-        
-        public static function orWhere($name, $value, $condition, $class)
-        {
-            if ($class->where) {
-                static::where(array($name => $value), 'OR', $condition, $class);
-            }
-            else {
-                throw new \Exception(
-                    'Update::where method must be called first'
-                );
-            }
+            return $statement;
         }
     }
 }
@@ -258,50 +257,133 @@ namespace Auxiliary {
 */
 namespace Sql {
     
-    use PDOConnection\DB as DB;    
+    use PDOConnection\DB as DB;
+    use Auxiliary\Methods as Auxi;
        
     class Select
     {
-        private $table = null;
+        private $built = null;
         
-        public $where = null;
-        
-        private $order = null;
-        
-        private $limit = null;
-        
-        private $columns = array();
-        
-        public $col_and_val = array();
+        private $query = null;
         
         private $map = null;
         
-        private $built = null;
+        private $auto_fix = array();
         
-        public $called = array();
+        public $col_and_val = array();
         
-        private $instantiated = null;
+        public $count = 0;
         
-        public $distinct = false;
+        private function modifyColumn($columns)
+        {
+            $new_column = null;
+            if ( ! is_array($columns)) {
+                $columns = explode(',', $columns);
+            }
+            
+            foreach ($columns as $column) {
+                
+                $column = trim($column);
+                
+                if ($column == '*') {
+                    
+                    $new_column = '*';
+                }
+                else {
+                    
+                    $keyword = 'count|sum';
+                    $pattern = sprintf('/^(%1$s)\:(.*)|(%1$s)\((.*)\)|(%1$s)$/i', $keyword);
+                    
+                    $asPathern = '/as:(.*)\s*|as (.*)\s*/i';
+                    if (preg_match($asPathern, $column, $matched)) {
+                        
+                        $matched = (array_values(array_filter($matched)));
+                        $column = str_replace($matched[0], 'AS ' . $matched[1], $column);
+                        
+                    }
+                    
+                    if (preg_match($pattern, $column, $matched)) {
+                        
+                        $matched = array_values(array_filter($matched));
+                        
+                        $count = null;
+                        $clause = null;
+                        
+                        if (isset($matched[2])) {
+                            $count = trim($matched[2]);
+                        }
+                        else {
+                            $count = '*';
+                        }
+                        
+                        $clause = strtoupper($matched[1]);
+                        
+                        $new_column .= sprintf('%s(%s)', $clause, $count);
+                    }
+                    elseif (strpos($column, '.') !== false) {
+                        
+                        $pattern = '/(.*)\.(\w+)\s*(.*)/i';
+                        if (preg_match($pattern, $column, $matched)) {
+                            $new_column .= sprintf('%s.`%s`, ', $matched[1], $matched[2]);
+                        }
+                    }
+                    else {
+                        $new_column .= sprintf('`%s`, ', $column);
+                    }
+                    
+                }
+            }
+            
+            return rtrim($new_column, ', ');
+        }
         
-        private $union = null;
-        
-        private $between = null;
-        
-        private $innerJoin = null;
+        public function map($map)
+        {
+            if ( ! $this->map) {
+                $this->map = $map;    
+            }
+            
+            return $this;
+        }
         
         public function __construct($columnNames = '*', $map = null)
         {
-            if (is_array($columnNames)) {
-                $this->columns = $columnNames;
-            }
-            else {
-                $this->columns = $columnNames;
-                $this->columns = explode(',', $this->columns);
-            }
+            
+            $this->query .= 'SELECT ';
+            $columnNames = $this->modifyColumn($columnNames);
+            
+            $this->query .= $columnNames;
                
             if ( ! $this->map) {
                 $this->map = $map;
+            }
+            
+            if (DB::$table) {
+                $this->from(DB::$table);    
+            }
+            $this->auto_fix['column'] = $columnNames;
+            
+        }
+        
+        public static function __callStatic($name, $arguments)
+        {
+            if (preg_match('/find_(or_)?(\w+)/', $name, $matched)) {
+                
+                if ( !DB::$table) {
+                    throw new \Exception(
+                        'not table defined, use DB::setTable(...) to define your table name'
+                    );
+                }
+                
+                $thix = new Select();
+                $column = $matched[2];
+                if (trim($matched[1]) != false) {    
+                    $thix->where($arguments, 'OR', '=', $column);
+                }
+                else {
+                    $thix->where($column, $arguments[0]);
+                }
+                return $thix;
             }
         }
         
@@ -318,27 +400,26 @@ namespace Sql {
         
         public function union($type = null)
         {
-            if (! $this->built) {
-                $this->buildQuery();
-            }
-            
             if ($type) {
-                $type = strtoupper($type);    
+                $type = strtoupper($type) . ' ';    
             }
             
-            $this->union .= '(' . $this->built . ') UNION ' . $type . ' ';
-            $this->built = null;
+            $this->buildQuery();
+            
+            if ($this->built && DB::$auto_fix == true) {
+                $this->built = $this->built . ' UNION ' . $type . '';
+            }
+            else {
+                $this->query .= ' UNION ' . $type . '';
+            }
+            
+            unset($this->auto_fix);
             return $this;
         }
         
         public function unionAll()
         {
-            if (! $this->built) {
-                $this->buildQuery();
-            }
-            
-            $this->union .= '(' . $this->built . ') UNION ALL ';
-            $this->built = null;
+            $this->union('ALL');
             return $this;
         }
         
@@ -353,153 +434,131 @@ namespace Sql {
         
         public function from($tableNames)
         {
-            $this->table = $tableNames;
+            $this->auto_fix['from'] = $tableNames;
+            $this->query .= ' FROM ' . $tableNames;
             return $this;
         }
         
         public function distinct()
         {
-            $this->distinct = true;
+            $this->auto_fix['distinct'] = true;
+            $this->query .= ' DISTINCT';
             return $this;
         }
         
-        public function where($name, $value = null, $condition = '=')
+        public function where($name, $value = null, $condition = '=', $const = null)
         {
-            \Auxiliary\Methods::where($name, $value, $condition, $this);
+            $this->auto_fix['where'] = Auxi::where(
+                $name, $value, $condition, $this, $const
+            );
+            
+            $this->query .= ' WHERE ' . $this->auto_fix['where'];
             return $this;
         }
         
         public function andWhere($name, $value, $condition = '=')
         {
-            \Auxiliary\Methods::andWhere($name, $value, $condition, $this);
+            $this->auto_fix['andwhere'] = Auxi::where($name, $value, $condition, $this);
+            $this->query .= ' AND ' . $this->auto_fix['andwhere'];
             return $this;
         }
         
         public function orWhere($name, $value, $condition = '=')
         {
-            \Auxiliary\Methods::orWhere($name, $value, $condition, $this);
+            $this->auto_fix['orwhere'] = Auxi::where($name, $value, $condition, $this);
+            $this->query .= ' OR ' . $this->auto_fix['orwhere'];
             return $this;
         }
         
         public function between($match1, $match2)
         {
-            $this->between = sprintf(' BETWEEN %s AND %s', $match1, $match2);
+            $this->auto_fix['between'] = sprintf(' BETWEEN %s AND %s', $match1, $match2);
+            $this->query .= $this->auto_fix['between'];
             return $this;
         }
         
         public function order($columnName, $orderType = 'ASC')
         {
-            $this->order = $columnName . ' ' . $orderType;
+            $this->auto_fix['order'] = $columnName . ' ' . $orderType;
+            $this->query .= 'ORDER BY ' . $this->auto_fix['order'];
             return $this;
         }
         
         public function limit($limit)
         {
-            $this->limit = $limit;
+            $this->auto_fix['limit'] = $limit;
+            $this->query .= ' LIMIT ' . $limit;
+            return $this;
+        }
+        
+        public function offset($offset)
+        {
+            $this->auto_fix['offset'] = $offset;
+            $this->query .= ' OFFSET ' . $offset;
             return $this;
         }
         
         private function buildQuery()
-        {    
-            $new_column = null;
-            $distinct = null;
-            
-            foreach ($this->columns as $column) {
+        {
+            if (DB::$auto_fix == true)
+            {
+                $new_query = null;
+                $new_query = 'SELECT';
+                if (isset($this->auto_fix['distinct'])) {
+                    $new_query .= ' ' . $this->auto_fix['distinct'];    
+                }
                 
-                $column = trim($column);
-                if ($column == '*') {
-                    $new_column = '*';
+                if (isset($this->auto_fix['column'])) {
+                    $new_query .= ' ' . $this->auto_fix['column'];    
                 }
                 else {
-                    
-                    $keyword = 'count|sum';
-                    $pattern = sprintf('/^(%1$s)\:(.*)|(%1$s)\((.*)\)|(%1$s)$/i', $keyword);
-                    
-                    $asPathern = '/as:(.*)\s*|as (.*)\s*/i';
-                    if (preg_match($asPathern, $column, $matched)) {
-                        $matched = (array_values(array_filter($matched)));
-
-                        $column = str_replace(
-                            $matched[0],
-                            'AS ' . $matched[1],
-                            $column
-                        );
-                    }
-                    
-                    if (preg_match($pattern, $column, $matched)) {
-                        
-                        $matched = array_values(array_filter($matched));
-                        
-                        $count = null;
-                        $clause = null;
-                        
-                        if (isset($matched[2])) {
-                            $count = trim($matched[2]);
-                        }else {
-                            $count = '*';
-                        }
-                        $clause = strtoupper($matched[1]);
-                        
-                        $new_column .= sprintf('%s(%s)', $clause, $count);
-                    }
-                    elseif (strpos($column, '.') !== false) {
-                        $pattern = '/(.*)\.(\w+)\s*(.*)/i';
-                        if (preg_match($pattern, $column, $matched)) {
-                            $new_column .= sprintf(
-                                '%s.`%s` %s, ', $matched[1], $matched[2], $matched[3]
-                            );
-                        }
-                        
-                        //$new_column .= sprintf('%s.`%s` %s, ', $table, $columnName, $stm);
-                    }
-                    else {
-                        $new_column .= sprintf('`%s`, ', $column);
-                    }
-                    
+                    throw new \Exception('No column selected');
                 }
-            }
-            
-            if ($this->distinct) {
-                $distinct = 'DISTINCT ';
-            }
-            $new_column = rtrim($new_column, ', ');
-            $query = 'SELECT ' . $distinct . $new_column;
-            $query .= ' FROM ' . $this->table;
-            
-            if ($this->where) {
-                $query .= ' WHERE ' . $this->where;
-                if ($this->between) {
-                    $query .= $this->between;    
+                
+                if (isset($this->auto_fix['from'])) {
+                    $new_query .= ' FROM ' . $this->auto_fix['from'];
                 }
+                else {
+                    throw new \Exception('No table selected');
+                }
+                
+                if (isset($this->auto_fix['where'])) {
+                    $new_query .= ' WHERE ' . $this->auto_fix['where'];
+                }
+                
+                if (isset($this->auto_fix['between'])) {
+                    $new_query .= $this->auto_fix['between'];
+                }
+                
+                if (isset($this->auto_fix['andwhere'])) {
+                    $new_query .= ' AND ' . $this->auto_fix['andwhere'];
+                }
+                
+                if (isset($this->auto_fix['orwhere'])) {
+                    $new_query .= ' OR ' . $this->auto_fix['orwhere'];
+                }
+                
+                if (isset($this->auto_fix['limit'])) {
+                    $new_query .= ' LIMIT ' . $this->auto_fix['limit'];
+                }
+                
+                if (isset($this->auto_fix['offset'])) {
+                    $new_query .= ' OFFSET ' . $this->auto_fix['offset'];
+                }
+                
+                $this->built .= $new_query;
             }
-            
-            if ($this->order) {
-                $query .= ' ORDER BY ' . $this->order;
+            else {
+                $this->built = $this->query;    
             }
-            
-            if ($this->limit) {
-                $query .= ' LIMIT ' . $this->limit;
-            }
-            
-            $this->where = null;
-            $this->order = null;
-            $this->limit = null;
-            $this->columns = null;
-            $this->between = null;
-            $this->distinct = false;
-            
-            $this->built = $query;
         }
         
         public function toString($forQuery = false)
         {
-            if ( ! $this->built || $this->built && $this->union) {
+            if ( (DB::$auto_fix && ! $this->built) || $this->query ) {
                 $this->buildQuery();    
             }
             
-            if ($this->union) {
-                $this->built = $this->union . '(' . $this->built . ')';    
-            }
             return \Auxiliary\Methods::Stringfy(
                 $this->built,
                 $this->col_and_val,
@@ -508,18 +567,13 @@ namespace Sql {
         }
         
         public function commit($from = null)
-        {
-            if ( ! $this->built || $this->built && $this->union) {
+        { 
+            if ( (DB::$auto_fix && ! $this->built) || $this->query ) {
                 $this->buildQuery();    
-            }
-            
-            if ($this->union) {
-                $this->built = $this->union . '(' . $this->built . ')';    
             }
             
             try {
                 $query = DB::$conn->prepare($this->built);
-                
                 if ($query->execute($this->col_and_val)) {
                     
                     $result = null;
@@ -554,6 +608,7 @@ namespace Sql {
                         $result = $query->fetchAll(\PDO::FETCH_ASSOC);
                     }
                     
+                    $this->count =  count($result);
                     if ($result) {            
                         if ($from === null) {
                             foreach ($result as $values) {
@@ -562,6 +617,9 @@ namespace Sql {
                                 }
                             }
                             return $result;    
+                        }
+                        elseif ($from == 'count') {
+                            return $this->count;
                         }
                         else {
                             if (isset($result[$from])) {
@@ -583,6 +641,11 @@ namespace Sql {
             }
         }
         
+        public function count()
+        {
+            return $this->commit('count');
+        }
+        
     }
     
     class InsertInto
@@ -602,6 +665,8 @@ namespace Sql {
         private $instantiated = null;
         
         private $duplicate = null;
+        
+        public $last_id = 0;
         
         public function __construct($tableName)
         {
@@ -746,8 +811,10 @@ namespace Sql {
                 $query = DB::$conn->prepare($this->built);
 
                 if ($query->execute($this->col_and_val)) {
+                    
+                    $this->last_id = DB::$conn->lastInsertId();
                     if ($lastID) {
-                        return DB::$conn->lastInsertId();
+                        return $this->last_id;
                     }
                 }
             } catch (\PDOException $e) {  
