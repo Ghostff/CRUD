@@ -9,13 +9,13 @@ DB::Config([
     'forceDB' => false,
     'forcTable' => false
 ]);
-DB::init('localhost', 'tester', 'root', '');
+//DB::init('localhost', 'tester', 'root', '');
 
-$query = new Sql\Select();
+$query = new Sql\Select('count:name');
 $query->from('Product')
 	  ->where('price')
 	  ->between(100, 220)
-	  ->commit();
+	  ->order('abs:key');
 	  
 echo( $query->toString());
 

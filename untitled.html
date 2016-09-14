@@ -145,7 +145,18 @@ Method 5:
           ->limit(4)
           ->commit();
           
-      
+     $query = new Sql\Select();
+     $query->from('Product')
+	      ->where('price')
+	      ->between(100, 220)
+	      ->order('abs:key');
+	      
+	 
+	 $query = new Sql\Select();
+    $query->from('Product')
+    	  ->where('price')
+    	  ->between(100, 220)
+    	  ->order('count');
 Method 7:
 
     class myObject
