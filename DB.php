@@ -249,31 +249,6 @@ namespace Auxiliary {
             }
             return $statement;
         }
-        
-        public static function makeQueryFunc($keyword, $column)
-        {
-            $pattern = sprintf('/^(%1$s)\:(.*)|(%1$s)\((.*)\)|(%1$s)$/i', $keyword);
-            
-            if (preg_match($pattern, $column, $matched)) {
-                
-                $matched = array_values(array_filter($matched));
-                
-                $count = null;
-                $clause = null;
-                
-                if (isset($matched[2])) {
-                    $count = trim($matched[2]);
-                }
-                else {
-                    $count = '*';
-                }
-                
-                $clause = strtoupper($matched[1]);
-                
-               return sprintf('%s(%s)', $clause, $count);
-            }
-            return false;
-        }
     }
 }
 
@@ -316,6 +291,9 @@ namespace Sql {
                 }
                 else {
                     
+                    $keyword = 'count|sum';
+                    $pattern = sprintf('/^(%1$s)\:(.*)|(%1$s)\((.*)\)|(%1$s)$/i', $keyword);
+                    
                     $asPathern = '/as:(.*)\s*|as (.*)\s*/i';
                     if (preg_match($asPathern, $column, $matched)) {
                         
@@ -324,8 +302,23 @@ namespace Sql {
                         
                     }
                     
-                    if ($match = Auxi::makeQueryFunc('count|sum', $column)) {
-                        $new_column .= $match;
+                    if (preg_match($pattern, $column, $matched)) {
+                        
+                        $matched = array_values(array_filter($matched));
+                        
+                        $count = null;
+                        $clause = null;
+                        
+                        if (isset($matched[2])) {
+                            $count = trim($matched[2]);
+                        }
+                        else {
+                            $count = '*';
+                        }
+                        
+                        $clause = strtoupper($matched[1]);
+                        
+                        $new_column .= sprintf('%s(%s)', $clause, $count);
                     }
                     elseif (strpos($column, '.') !== false) {
                         
@@ -333,7 +326,6 @@ namespace Sql {
                         if (preg_match($pattern, $column, $matched)) {
                             $new_column .= sprintf('%s.`%s`, ', $matched[1], $matched[2]);
                         }
-                        
                     }
                     else {
                         $new_column .= sprintf('`%s`, ', $column);
@@ -485,23 +477,16 @@ namespace Sql {
             return $this;
         }
         
-        public function order($columnName, $orderType = null)
+        public function order($columnName, $orderType = 'ASC')
         {
-            if ($columnName == 'rand') {
-                $columnName = 'RAND()';
-            }
-            elseif ($columnName == '`rand`') {
-                $columnName = 'rand';
-            }
-            elseif ($match = Auxi::makeQueryFunc('abs', $columnName)) {
-                $columnName = $match;
-            }
-            
             $this->auto_fix['order'] = $columnName . ' ' . $orderType;
-            $this->query .= ' ORDER BY ' . $this->auto_fix['order'];
+            $this->query .= 'ORDER BY ' . $this->auto_fix['order'];
             return $this;
         }
-        
+		
+		public function group($group)
+		{
+		}
         public function limit($limit)
         {
             $this->auto_fix['limit'] = $limit;
@@ -893,21 +878,27 @@ namespace Sql {
             $this->col_and_val[':u' . $name] = $value;
         }
         
-        public function where($name, $value = null)
+		public function where($name, $value = null, $condition = '=', $const = null)
         {
-            \Auxiliary\Methods::where($name, $value, $this);
+            $this->where .= Auxi::where(
+                $name, $value, $condition, $this, $const
+            );
             return $this;
         }
         
-        public function andWhere($name, $value)
+        public function andWhere($name, $value, $condition = '=')
         {
-            \Auxiliary\Methods::andWhere($name, $value, $this);
+            $this->where .= ' AND ' .  Auxi::where(
+				$name, $value, $condition, $this
+			);
             return $this;
         }
         
-        public function orWhere($name, $value)
+        public function orWhere($name, $value, $condition = '=')
         {
-            \Auxiliary\Methods::orWhere($name, $value, $this);
+            $this->where .= ' OR ' . Auxi::where(
+				$name, $value, $condition, $this
+			);
             return $this;
         }
         
