@@ -2,7 +2,7 @@
 
 use PDOConnection\DB as DB;
 
-require 'DB.php';
+require 'src/DB.php';
     
 DB::Config([
     'debug' 	=> true,
@@ -10,6 +10,7 @@ DB::Config([
     'forcTable' => false,
 //	'autoFix'	=> true
 ]);
+
 DB::init('localhost', 'tester', 'root', '');
 //DB::setTable('Product');
 

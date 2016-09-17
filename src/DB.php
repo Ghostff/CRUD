@@ -297,8 +297,8 @@ namespace Sql {
         public $col_and_val = array();
         
         public $count = 0;
-		
-		public $fall_back = null;
+        
+        public $fall_back = null;
         
         private function modifyColumn($columns)
         {
@@ -405,7 +405,7 @@ namespace Sql {
                 $this->__construct($arguments[0]);
                 return $this;
             }
-			elseif ($name == 'fallBack') {
+            elseif ($name == 'fallBack') {
                 return $this->fall_back;
             }
         }
@@ -594,7 +594,7 @@ namespace Sql {
             if ( (DB::$auto_fix && ! $this->built) || $this->query ) {
                 $this->buildQuery();    
             }
-						
+                        
             try {
                 $query = DB::$conn->prepare($this->built);
                 if ($query->execute($this->col_and_val)) {
@@ -712,8 +712,8 @@ namespace Sql {
                     $arguments[1] = null;
                 }
                 $refrence =  new $classNamespace($arguments[0], $arguments[1]);
-				
-				$refrence->fall_back = &$this;
+                
+                $refrence->fall_back = &$this;
                 $this->instantiated = $refrence;
                 return $refrence;
             }
@@ -730,7 +730,7 @@ namespace Sql {
                 if ( ! is_array($name)) {
                     $name = func_get_args();
                 }
-				
+                
                 foreach ($name as $key => $value) {
                     $this->col_and_val[':i' . $this->columns[$key]] = $value;
                 }
@@ -765,12 +765,12 @@ namespace Sql {
         public function column($columnNames)
         {
             $this->last_was_col = true;
-			
+            
             if (is_array($columnNames)) {
                 $this->columns = $columnNames;
             }
             else {
-				$this->columns = array_map('trim', func_get_args());
+                $this->columns = array_map('trim', func_get_args());
             }
             return $this;
         }
@@ -901,7 +901,7 @@ namespace Sql {
             $this->col_and_val[':u' . $name] = $value;
         }
         
-		public function where($name, $value = null, $condition = '=', $const = null)
+        public function where($name, $value = null, $condition = '=', $const = null)
         {
             $this->where .= Auxi::where(
                 $name, $value, $condition, $this, $const
@@ -912,16 +912,16 @@ namespace Sql {
         public function andWhere($name, $value, $condition = '=')
         {
             $this->where .= ' AND ' .  Auxi::where(
-				$name, $value, $condition, $this
-			);
+                $name, $value, $condition, $this
+            );
             return $this;
         }
         
         public function orWhere($name, $value, $condition = '=')
         {
             $this->where .= ' OR ' . Auxi::where(
-				$name, $value, $condition, $this
-			);
+                $name, $value, $condition, $this
+            );
             return $this;
         }
         
@@ -1008,16 +1008,16 @@ namespace Sql {
         public function andWhere($name, $value, $condition = '=')
         {
             $this->where .= ' AND ' .  Auxi::where(
-				$name, $value, $condition, $this
-			);
+                $name, $value, $condition, $this
+            );
             return $this;
         }
         
         public function orWhere($name, $value, $condition = '=')
         {
             $this->where .= ' OR ' . Auxi::where(
-				$name, $value, $condition, $this
-			);
+                $name, $value, $condition, $this
+            );
             return $this;
         }
                 
@@ -1066,14 +1066,14 @@ namespace Sql {
     class Query
     {
         public $col_and_val = null;
-		
+        
         private $built = null;
-		
+        
         public $called = array();
-		
+        
         private $instantiated = null;
-		
-		public $fall_back = null;
+        
+        public $fall_back = null;
         
         
         private function buildQuery()
@@ -1090,7 +1090,7 @@ namespace Sql {
             $this->built = $query;
         }
         
-		public function toString($forQuery = false)
+        public function toString($forQuery = false)
         {
             return \Auxiliary\Methods::Stringfy(
                 $this->built,
@@ -1098,25 +1098,25 @@ namespace Sql {
                 $forQuery
             );
         }
-		
+        
         public function __construct($queryString)
         {
             $this->built = $queryString;
         }
         
-		public function __call($name, $arg)
-		{
-			if ($name == 'fallBack') {
+        public function __call($name, $arg)
+        {
+            if ($name == 'fallBack') {
                 return $this->fall_back;
             }
-		}
-		
-		public function setToken($bind_token = array())
-		{
-			$this->col_and_val = $bind_token;
-			return $this;
-		}
-		
+        }
+        
+        public function setToken($bind_token = array())
+        {
+            $this->col_and_val = $bind_token;
+            return $this;
+        }
+        
         public function commit($method = null, $casting = false)
         {
             if (! $this->built) {
@@ -1125,15 +1125,15 @@ namespace Sql {
             
             try {
                 $query = DB::$conn->prepare($this->built);
-				
+                
                 if ($query->execute($this->col_and_val))
-				{
-					if ($method == 'pdo') {
-						return DB::$conn;
-					}
-					elseif ($method == 'stm') {
-						return $query;
-					}
+                {
+                    if ($method == 'pdo') {
+                        return DB::$conn;
+                    }
+                    elseif ($method == 'stm') {
+                        return $query;
+                    }
                     elseif ($method) {
                         $argument = null;
                         if (strpos($method, '(') !== false) {
@@ -1168,19 +1168,19 @@ namespace Sql {
             }
         }
     }
-	
-	class Find
-	{
-		public static function __callStatic($name, $arg)
-		{
-			DB::setTable(null);
-			list($table, $column) = explode('_', $name);
-			$query = new Select(isset($arg[1]) ? $arg[1] : '*');
-    		$query->from($table)
-				  ->where($column, $arg[0]);
-				  
-			return $query;
-		}
-	}
+    
+    class Find
+    {
+        public static function __callStatic($name, $arg)
+        {
+            DB::setTable(null);
+            list($table, $column) = explode('_', $name);
+            $query = new Select(isset($arg[1]) ? $arg[1] : '*');
+            $query->from($table)
+                  ->where($column, $arg[0]);
+                  
+            return $query;
+        }
+    }
     
 }
