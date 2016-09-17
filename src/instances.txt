@@ -249,19 +249,35 @@ Method 8:
    	Sql\Select::find_or_name('foo', 'Bar')->count();     
    
    
-  Method 18:          
-    class myObject
-    {
-        public $title = null;
-        public $price = null;
-        public $name = null;
-        
-        function __construct() {
-            var_dump($this->title, $this->price, $this->name);
-        }
-    }
-    
-    Select::find_name('foo')->map('myObject')->commit();   
+Method 18:          
+	class myObject
+	{
+		public $title = null;
+		public $price = null;
+		public $name = null;
+		
+		function __construct() {
+			var_dump($this->title, $this->price, $this->name);
+		}
+	}
+	
+	Select::find_name('foo')->map('myObject')->commit();   
+ 
+ 
+ 
+ Method 19:          
+	$query = new Sql\Select();
+	query->from('Product')
+    	 ->where('price', 10.99)
+    	 ->group('id')
+         ->toString();  
+		 
+		 
+	$query = new Sql\Select('title);
+	query->from('Product')
+    	 ->where('price', 10.99)
+    	 ->group('id', 'floor:price*2) //or floor(price*2)
+         ->toString();  
       
                         
  UPDATE
@@ -398,3 +414,5 @@ FIND
     
     //count name columns in product where name == Foo
     Sql\Find::Product_name('Foo', 'count:name')->commit() // 'COUNT(name)'
+	//while
+	Sql\Find::Product_name('Foo')->count(); //counts the total number or result (can call every other select method)

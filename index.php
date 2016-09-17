@@ -8,11 +8,18 @@ DB::Config([
     'debug' 	=> true,
     'forceDB' 	=> false,
     'forcTable' => false,
-//	'autoFix'	=> true
+	'autoFix'	=> true
 ]);
 
 DB::init('localhost', 'tester', 'root', '');
+
+
 //DB::setTable('Product');
 
 
-echo Sql\Find::Product_name('Foo', 'count')->toString();
+$query = new Sql\Select('any_value:address');
+echo $query->from('Product')
+    	   ->where('price',22)
+    	   ->group('id')
+		   ->have('c = 1')
+           ->toString();

@@ -13,22 +13,22 @@ class DBTest extends Test
 			Data: {":ititle":"Shoes",":iprice":10.99,":iname":"FooBar"}
 		';	
 		
-		$this->name = 'Method 1';	
+		$this->name = 1;	
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\InsertInto(\'Product\');
 				$query->title = \'Shoes\';
 				$query->price = 10.99;
 				$query->name = \'FooBar\';
-				$test = $query->toString();
+				$t = $query->toString();
 			'
 		);
 		
-		$this->name = 'Method 2';	
+		$this->name = 2;	
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\InsertInto(\'Product\');
-				$test = $query->values(array(
+				$t = $query->values(array(
 					\'title\' => \'Shoes\',
 					\'price\'	=> 10.99,
 					\'name\'	=> \'FooBar\'
@@ -37,33 +37,32 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 3';
+		$this->name = 3;
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\InsertInto(\'Product\');
-				$test = $query->column(\'title\', \'price\', \'name\')
+				$t = $query->column(\'title\', \'price\', \'name\')
 					  ->values(\'Shoes\', 10.99, \'FooBar\')
 					  ->toString();
 			'
 		);
 		
-		$this->name = 'Method 4';		
+		$this->name = 4;		
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\InsertInto(\'Product\');
-				$test = $query->column([\'title\', \'price\', \'name\'])
+				$t = $query->column([\'title\', \'price\', \'name\'])
 					  ->values([\'Shoes\', 10.99, \'FooBar\'])
 					  ->toString();
 			'
 		);
 		
 		
-		
-		$this->name = 'Method 5';		
+		$this->name = 5;		
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\InsertInto(\'Product\');
-				$test = $query->json(\'
+				$t = $query->json(\'
 					{
 						"title": "Shoes",
 						"price": 10.99,
@@ -74,29 +73,29 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 6';		
+		$this->name = 6;		
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\InsertInto(\'Product\');
-				$test = $query->json(\'insert.json\', true)->toString();
+				$t = $query->json(\'insert.json\', true)->toString();
 			'
 		);
 		
 		
-		$this->name = 'Method 7';
+		$this->name = 7;
 		$expected = '
 			Query: INSERT INTO Product (`email`) VALUES (:iemail)Data: {":iemail":"Foo@bar.om"}
 		';	
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\InsertInto(\'Product\');
-				$test = $query->values(\'email\', \'Foo@bar.om\')
+				$t = $query->values(\'email\', \'Foo@bar.om\')
     	  				->toString();
 			'
 		);
 		
 		
-		$this->name = 'Method 7';
+		$this->name = 7;
 		$expected = '
 			Query: INSERT INTO Product (`fname`, `lname`, `price`) SELECT COUNT(*) FROM Product WHERE `name` = :wname OR `title` = :wtitle
 			Data: {":wname":"Bar",":wtitle":"Shoes"}
@@ -104,8 +103,8 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\InsertInto(\'Product\');
-				$test = $query->column(\'fname\', \'lname\', \'price\')
-					   ->Select(\'count\')
+				$t = $query->column(\'fname\', \'lname\', \'price\')
+					   ->Select(\'count:*\')
 					   ->from(\'Product\')
 					   ->where(\'name\', \'Bar\')
 					   ->orWhere(\'title\', \'Shoes\')
@@ -115,11 +114,13 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 8';
+		
+		
+		$this->name = 8;
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\InsertInto(\'Product\');
-				$test = $query->column(\'fname\', \'lname\', \'price\')
+				$t = $query->column(\'fname\', \'lname\', \'price\')
 					  ->Query(\'SELECT COUNT(*) FROM Product WHERE `name` = :wname OR `title` = :wtitle\')
 					  ->setToken([\':wname\' => \'Bar\', \':wtitle\' => \'Shoes\'])
 					  ->fallBack()
@@ -135,28 +136,28 @@ class DBTest extends Test
 	public function _test_Select_instantces()
 	{
 		
-		$this->name = 'Method 1';
+		$this->name = 1;
 		$expected = '
 			Query: SELECT `title`, `price`, `name` FROM ProductData: []
 		';	
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'title, price, name\');
-    			$test = $query->from(\'Product\')->toString();
+    			$t = $query->from(\'Product\')->toString();
 			'
 		);
 		
 		
-		$this->name = 'Method 2';
+		$this->name = 2;
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select([\'title\', \'price\', \'name\']);
-    			$test = $query->from(\'Product\')->toString();
+    			$t = $query->from(\'Product\')->toString();
 			'
 		);
 		
 		
-		$this->name = 'Method 3';
+		$this->name = 3;
 		$expected = '
 			Query: SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname
 			Data: {":wname":"Bar"}
@@ -164,46 +165,46 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'title, price, name\');
-    			$test = $query->from(\'Product\')
+    			$t = $query->from(\'Product\')
 					  ->where(\'name\', \'Bar\')
 					  ->toString();
 			'
 		);
 		
 		
-		$this->name = 'Method 4';
+		$this->name = 4;
 		$expected = '
 			Query: SELECT COUNT(*) FROM ProductData: []
 		';	
 		$this->imagine(
 			$expected,
-			'	$query = new Sql\Select(\'count\');
-				$test = $query->from(\'Product\')->toString();
+			'	$query = new Sql\Select(\'count:*\');
+				$t = $query->from(\'Product\')->toString();
 			'
 		);
 		
-		$this->name = 'Method 5';
+		$this->name = 5;
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'COUNT(*)\');
-				$test = $query->from(\'Product\')->toString();
+				$t = $query->from(\'Product\')->toString();
 			'
 		);
 		
 		
-		$this->name = 'Method 6';
+		$this->name = 6;
 		$expected = '
 			Query: SELECT `title`, `price`, COUNT(name) FROM ProductData: []
 		';	
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select([\'title\', \'price\', \'count:name\']);
-				$test = $query->from(\'Product\')->toString();
+				$t = $query->from(\'Product\')->toString();
 			'
 		);
 		
 		
-		$this->name = 'Method 6';
+		$this->name = 6;
 		$expected = '
 			Query: SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname AND `title` = :wtitle
 			Data: {":wname":"Bar",":wtitle":"Shoes"}
@@ -211,18 +212,18 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'title, price, name\');
-				$test = $query->from(\'Product\')
+				$t = $query->from(\'Product\')
 					  ->where([\'name\' => \'Bar\', \'title\' => \'Shoes\'])
 					  ->toString();
 			'
 		);
 		
 		
-		$this->name = 'Method 7';
+		$this->name = 7;
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'title, price, name\');
-				$test = $query->from(\'Product\')
+				$t = $query->from(\'Product\')
 				  ->where(\'name\', \'Bar\')
 				  ->andWhere(\'title\', \'Shoes\')
 				  ->toString();
@@ -230,7 +231,7 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 8';
+		$this->name = 8;
 		$expected = '
 			Query: SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname OR `title` = :wtitle
 			Data: {":wname":"Bar",":wtitle":"Shoes"}
@@ -238,17 +239,17 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'title, price, name\');
-				$test =  $query->from(\'Product\')
+				$t =  $query->from(\'Product\')
 						  ->where([\'name\' => \'Bar\', \'title\' => \'Shoes\'], \'OR\')
 						  ->toString();
 			'
 		);
 		
-		$this->name = 'Method 9';
+		$this->name = 9;
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'title, price, name\');
-				$test =  $query->from(\'Product\')
+				$t =  $query->from(\'Product\')
 						  ->where(\'name\', \'Bar\')
 						  ->orWhere(\'title\', \'Shoes\')
 						  ->toString();
@@ -256,7 +257,7 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 10';
+		$this->name = 10;
 		$expected = '
 			Query: SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname AND `price` = :wprice OR `title` = :wtitle ORDER BY id  LIMIT 4
 			Data: {":wname":"Bar",":wprice":10.99,":wtitle":"Shoes"}
@@ -264,7 +265,7 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'title, price, name\');
-				$test =  $query->from(\'Product\')
+				$t =  $query->from(\'Product\')
 						  ->where(\'name\', \'Bar\')
 						  ->andWhere(\'price\', 10.99)
 						  ->orWhere(\'title\', \'Shoes\')
@@ -275,7 +276,7 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 11';
+		$this->name = 11;
 		$expected = '
 			Query: SELECT `title`, `price`, `name` FROM Product WHERE price BETWEEN 100 AND 220 ORDER BY ABS(key)\s
 			Data: []
@@ -283,7 +284,7 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'title, price, name\');
-				$test =  $query->from(\'Product\')
+				$t =  $query->from(\'Product\')
 						  ->where(\'price\')
 						  ->between(100, 220)
 						  ->order(\'abs:key\')
@@ -292,7 +293,7 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 12';
+		$this->name = 12;
 		$expected = '
 			Query: SELECT `title`, `price`, `name` FROM Product WHERE `id` > :wid AND `group` = :wgroup
 			Data: {":wid":10,":wgroup":5}
@@ -300,13 +301,13 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'title, price, name\');
-				$test =  $query->from(\'Product\')
+				$t =  $query->from(\'Product\')
                       ->where([\'id\' => 10, \'group\' => 5], \'AND\', \'>,<\')
                       ->toString();
 			'
 		);
 		
-		$this->name = 'Method 13';
+		$this->name = 13;
 		$expected = '
 			Query: SELECT `title`, `price`, `name` DISTINCT FROM Product
 			Data: []
@@ -314,13 +315,13 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'title, price, name\');
-				$test = $query->distinct()
+				$t = $query->distinct()
                       ->from(\'Product\')
                       ->toString();
 			'
 		);
 		
-		$this->name = 'Method 14';
+		$this->name = 14;
 		$expected = '
 			Query: SELECT `title`, `price`, `name` FROM Product WHERE `id` = :wid 
 				UNION SELECT * FROM Shop WHERE `id` = :wwid 
@@ -330,7 +331,7 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'title, price, name\');
-				$test =  $query->from(\'Product\')
+				$t =  $query->from(\'Product\')
 						  ->where(\'id\', 1)
 						  ->union()
 						  ->select()
@@ -345,7 +346,7 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 15';
+		$this->name = 15;
 		$expected = '
 			Query: SELECT * FROM Product WHERE price BETWEEN 100 AND 220
 			Data: []
@@ -353,7 +354,7 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select();
-				$test =  $query->from(\'Product\')
+				$t =  $query->from(\'Product\')
 						  ->where(\'price\')
 						  ->between(100, 220)
 						  ->toString();
@@ -361,7 +362,7 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 15';
+		$this->name = 15;
 		$expected = '
 			Query: SELECT table.`name` AS t1, table.`user` AS t2 FROM Product WHERE price BETWEEN 100 AND 220
 			Data: []
@@ -369,92 +370,136 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Select(\'table.name as t1, table.user as:t2\');
-                $test = $query->from(\'Product\')
+                $t = $query->from(\'Product\')
                       ->where(\'price\')
                       ->between(100, 220)
                       ->toString();
 			'
 		);
 		
+		$expected = '
+			Query: SELECT * FROM Product WHERE `p_pid` = :wp_pid ORDER BY id asc
+			Data: {":wp_pid":10}
+		';
 		
-		$this->name = 'Method 16';
+		$this->name = 16;
+		$this->imagine(
+			$expected,
+			'	$query = new Sql\Select();
+				$t = $query->from(\'Product\')
+							->where(\'p_pid\', 10)
+							->order(\'id\', \'asc\')
+							->toString();
+			'
+		);
+		
+		$expected = '
+			Query: SELECT * FROM Product WHERE `p_pid` = :wp_pid LIMIT 3
+			Data: {":wp_pid":10}
+		';
+		$this->name = 17;
+		$this->imagine(
+			$expected,
+			'	$query = new Sql\Select();
+				$t = $query->from(\'Product\')
+							->where(\'p_pid\', 10)
+							->limit(3)
+							->toString();
+			'
+		);
+		
+
+		$expected = 
+		'
+			Query: SELECT * FROM Product WHERE `p_pid` = :wp_pid ORDER BY id asc LIMIT 3
+			Data: {":wp_pid":10}
+		';
+		$this->name = 18;
+		
+		$this->imagine(
+			$expected,
+			'	$query = new Sql\Select();
+				$t = $query->from(\'Product\')
+							->where(\'p_pid\', 10)
+							->order(\'id\', \'asc\')
+							->limit(3)
+							->toString();
+			'
+		);
+
+
+		$this->name = 19;
 		$expected = '
 			Query: SELECT * FROM Product WHERE `name` = :wname
 			Data: {":wname":"foo"}
 		';
 		$this->imagine(
 			$expected,
-			'	PDOConnection\DB::setTable(\'Product\');
-				$test = Sql\Select::find_name(\'foo\')->toString();
+			'
+				PDOConnection\DB::setTable(\'Product\');
+				$t = Sql\Select::find_name(\'foo\')->toString();
 			'
 		);
 		
-		
-		$this->name = 'Method 17';
+		$this->name = 20;
 		$expected = '
 			Query: SELECT * FROM Product WHERE `name` = :wname OR `name` = :wwname
 			Data: {":wname":"foo",":wwname":"Bar"}
 		';
+		
 		$this->imagine(
 			$expected,
-			'	PDOConnection\DB::setTable(\'Product\');
-				$test = Sql\Select::find_or_name(\'foo\', \'Bar\')->toString();
+			'
+				PDOConnection\DB::setTable(\'Product\');
+				$t = Sql\Select::find_or_name(\'foo\', \'Bar\')->toString();
+				PDOConnection\DB::setTable(null);
 			'
 		);
 		
+		$this->name = 21;
 		$expected = '
-			Query: SELECT * FROM Product FROM Product WHERE `p_pid` = :wp_pid ORDER BY id asc
-			Data: {":wp_pid":10}
+			Query: SELECT MAX(*) FROM Product WHERE `price` = :wprice GROUP BY id
+			Data: {":wprice":10.99}
 		';
 		
-		$this->name = 'Method 18';
 		$this->imagine(
 			$expected,
-			'	$query = new Sql\Select();
-				$test = $query->from(\'Product\')
-							->where(\'p_pid\', 10)
-							->order(\'id\', \'asc\')
-							->toString();
+			'
+				$query = new Sql\Select(\'max:*\');
+				$t = $query->from(\'Product\')
+					   ->where(\'price\', 10.99)
+					   ->group(\'id\')
+					   ->toString();
 			'
 		);
 		
+		$this->name = 22;
 		$expected = '
-			Query: SELECT * FROM Product FROM Product WHERE `p_pid` = :wp_pid LIMIT 3
-			Data: {":wp_pid":10}
+			Query: SELECT MAX(*) FROM Product WHERE `price` = :wprice GROUP BY id, FLOOR(price*2)
+			Data: {":wprice":10.99}
 		';
-		$this->name = 'Method 19';
+		
 		$this->imagine(
 			$expected,
-			'	$query = new Sql\Select();
-				$test = $query->from(\'Product\')
-							->where(\'p_pid\', 10)
-							->limit(3)
-							->toString();
 			'
+				$query = new Sql\Select(\'max:*\');
+				$t = $query->from(\'Product\')
+					   ->where(\'price\', 10.99)
+					   ->group(\'id\', \'floor:price*2\')
+					   ->toString();
+			',1
 		);
 		
-		$expected = '
-			Query: SELECT * FROM Product FROM Product WHERE `p_pid` = :wp_pid ORDER BY id asc LIMIT 3
-			Data: {":wp_pid":10}
-		';
-		$this->name = 'Method 20';
-		$this->imagine(
-			$expected,
-			'	$query = new Sql\Select();
-				$test = $query->from(\'Product\')
-							->where(\'p_pid\', 10)
-							->order(\'id\', \'asc\')
-							->limit(3)
-							->toString();
-			'
-		);
+		
+		
+		
 		
 	}
 	
 	public function _test_Update_instantces()
 	{
-				
-		$this->name = 'Method 1';
+		
+		$this->name = 1;
 		$expected = '
 			Query: UPDATE Product SET `name` = :uname WHERE `title` = :wtitle
 			Data: {":uname":"Foo",":wtitle":"Shoes"}
@@ -462,13 +507,13 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Update(\'Product\');
-                $test = $query->set(\'name\', \'Foo\')
-                      ->where(\'title\', \'Shoes\')
-                      ->toString();
+                $t = $query->set(\'name\', \'Foo\')
+                      		  ->where(\'title\', \'Shoes\')
+                      		  ->toString();
 			'
 		);
 		
-		$this->name = 'Method 2';
+		$this->name = 2;
 		$expected = '
 			Query: UPDATE Product SET `name` = :uname, `price` = :uprice WHERE `title` = :wtitle
 			Data: {":uname":"Foo",":uprice":10.88,":wtitle":"Shoes"}
@@ -476,7 +521,7 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Update(\'Product\');
-                $test = $query->set(array(
+                $t = $query->set(array(
 							\'name\' => \'Foo\', 
 							\'price\' => 10.88
 						))->where(\'title\', \'Shoes\')
@@ -485,7 +530,7 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 3';
+		$this->name = 3;
 		$expected = '
 			Query: UPDATE Product SET `name` = :uname, `price` = :uprice WHERE `name` = :wname AND `price` = :wprice OR `title` = :wtitle
 			Data: {":uname":"Foo",":uprice":10.88,":wname":"Bar",":wprice":10.99,":wtitle":"Shoes"}
@@ -493,7 +538,7 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Update(\'Product\');
-                $test = $query->set(array(
+                $t = $query->set(array(
 							\'name\' => \'Foo\', 
 							\'price\' => 10.88
 						))->where(\'name\', \'Bar\')
@@ -504,7 +549,7 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 4';
+		$this->name = 4;
 		$expected = '
 			Query: UPDATE Product SET `title` = :utitle, `price` = :uprice, `name` = :uname WHERE `title` = :wtitle
 			Data: {":wtitle":"Shoes",":utitle":"Boots",":uprice":10.55,":uname":"Foo"}
@@ -518,12 +563,12 @@ class DBTest extends Test
                 $query->price = 10.55;
                 $query->name = \'Foo\';
                 
-                $test = $query->toString();
+                $t = $query->toString();
 			'
 		);
 		
 		
-		$this->name = 'Method 5';
+		$this->name = 5;
 		$expected = '
 			Query: UPDATE Product SET `title` = :utitle, `price` = :uprice, `name` = :uname WHERE `title` = :wtitle
 			Data: {":utitle":"Shoes",":uprice":10.99,":uname":"FooBar",":wtitle":"Shoes"}
@@ -535,17 +580,17 @@ class DBTest extends Test
                 $query->price = 10.99;
                 $query->name = \'FooBar\';
                 
-                $test = $query->where(\'title\', \'Shoes\')
+                $t = $query->where(\'title\', \'Shoes\')
                       ->toString();
 			'
 		);
 		
 		
-		$this->name = 'Method 6';
+		$this->name = 6;
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Update(\'Product\');
-                $test = $query->json(\'{
+                $t = $query->json(\'{
 							"title": "Shoes",
 							"price": 10.99,
 							"name": "FooBar"
@@ -555,11 +600,11 @@ class DBTest extends Test
 		);
 		
 		
-		$this->name = 'Method 7';
+		$this->name = 7;
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Update(\'Product\');
-                $test =  $query->json(\'insert.json\', true)
+                $t =  $query->json(\'insert.json\', true)
                       		->where(\'title\', \'Shoes\')
                       		->toString();
 			'
@@ -569,7 +614,7 @@ class DBTest extends Test
 	
 	public function _test_Delete_instantces()
 	{
-		$this->name = 'Method 1';
+		$this->name = 1;
 		$expected = '
 			Query: DELETE FROM Product WHERE `title` = :wtitle OR `name` = :wname
 			Data: {":wtitle":"Shoes",":wname":"FooBar"}
@@ -577,7 +622,7 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\deleteFrom(\'Product\');
-                $test = $query->where(\'title\', \'Shoes\')
+                $t = $query->where(\'title\', \'Shoes\')
 						  ->orWhere(\'name\', \'FooBar\')
 						  ->toString(); 
 			'
@@ -586,7 +631,7 @@ class DBTest extends Test
 	
 	public function _test_Query_instantces()
 	{
-		$this->name = 'Method 1';
+		$this->name = 1;
 		$expected = '
 			Query: SELECT `title`, `price`, `name` FROM Product WHERE `name` = "Foo"
 			Data: null
@@ -594,12 +639,12 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Query(\'SELECT `title`, `price`, `name` FROM Product WHERE `name` = "Foo"\');
-                $test = $query->toString();
+                $t = $query->toString();
 			'
 		);
 		
 		
-		$this->name = 'Method 2';
+		$this->name = 2;
 		$expected = '
 			Query: SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname
 			Data: {":wname":"Foo"}
@@ -608,23 +653,23 @@ class DBTest extends Test
 			$expected,
 			'	$query = new Sql\Query(\'SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname\');
                 $query->col_and_val = array(\':wname\' => \'Foo\');
-                $test = $query->toString();
+                $t = $query->toString();
 			'
 		);
 		
-		$this->name = 'Method 3';
+		$this->name = 3;
 		$this->imagine(
 			$expected,
 			'	$query = new Sql\Query(\'SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname\');
                 $query->setToken(array(\':wname\' => \'Foo\'));
-                $test = $query->toString();
+                $t = $query->toString();
 			'
 		);
 	}
 	
 	public function _test_Find_instantces()
 	{
-		$this->name = 'Method 1';
+		$this->name = 1;
 		$expected = '
 			Query: SELECT * FROM Product WHERE `name` = :wname LIMIT 1
 			Data: {":wname":"Foo"}
@@ -632,11 +677,11 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'
-                $test = Sql\Find::Product_name(\'Foo\')->toString();
+                $t = Sql\Find::Product_name(\'Foo\')->toString();
 			'
 		);
 		
-		$this->name = 'Method 2';
+		$this->name = 2;
 		$expected = '
 			Query: SELECT COUNT(*) FROM Product WHERE `name` = :wname LIMIT 1
 			Data: {":wname":"Foo"}
@@ -644,11 +689,11 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'
-               $test =  Sql\Find::Product_name(\'Foo\', \'count\')->toString();
+               $t =  Sql\Find::Product_name(\'Foo\', \'count(*)\')->toString();
 			'
 		);
 		
-		$this->name = 'Method 3';
+		$this->name = 3;
 		$expected = '
 			Query: SELECT COUNT(name) FROM Product WHERE `name` = :wname LIMIT 1
 			Data: {":wname":"Foo"}
@@ -656,7 +701,7 @@ class DBTest extends Test
 		$this->imagine(
 			$expected,
 			'
-                $test = Sql\Find::Product_name(\'Foo\', \'count:name\')->toString();
+                $t = Sql\Find::Product_name(\'Foo\', \'count:name\')->toString();
 			'
 		);
 	}

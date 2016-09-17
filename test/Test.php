@@ -8,25 +8,33 @@ class Test
 	
 	protected $expected = null;
 	
-	protected function imagine($imagine, $with)
+	protected function imagine($imagine, $with, $ouput = false)
 	{
 		@eval("$with");	
-		$imagine = preg_replace(array('/\s+/', '/\s*Data:/'), array(' ', 'Data:'), trim($imagine));
+		
+		$imagine = preg_replace(
+			array('/\s+/', '/\s*Data:/'),
+			array(' ', 'Data:'),
+			trim($imagine)
+		);
+		
 		$imagine = str_replace('\s', ' ', $imagine);
-		
-		#var_dump(strip_tags($test), $imagine);
-		
-		if ( $imagine == strip_tags($test)) {
+
+		if ( $imagine == strip_tags($t)) {
 			echo sprintf(
-				'<code style="color:green">(%s) %s is --OK </code><br>',
+				'<code style="color:green">(%s) Method %s --PASSED </code><br>',
 				$this->method, $this->name
 			);
 		}
 		else {
 			echo sprintf(
-				'<code style="color:red">(%s) %s --FAILED </code><br>',
+				'<code style="color:red">(%s) Method %s --FAILED </code><br>',
 				$this->method, $this->name
 			);
+		}
+		
+		if ($ouput) {
+			var_dump(strip_tags($t), $imagine);
 		}
 	}
 	public function __construct()
