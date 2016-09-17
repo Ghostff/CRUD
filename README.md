@@ -41,8 +41,7 @@ DELETE METHODS
 QUERY METHODS
 -------
 ```php
-$query = new Sql\Query('SELECT * FROM Product WHERE `name` = \'Foo\'')
-      ->commit();
+    new Sql\Query('SELECT * FROM Product WHERE `id` = 10')->commit();
 ```    
 
 
