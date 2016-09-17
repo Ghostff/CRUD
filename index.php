@@ -5,10 +5,10 @@ use PDOConnection\DB as DB;
 require 'src/DB.php';
     
 DB::Config([
-    'debug' 	=> true,
-    'forceDB' 	=> false,
+    'debug'     => true,
+    'forceDB'   => false,
     'forcTable' => false,
-//	'autoFix'	=> true
+//  'autoFix'   => true (works for Select Query alone)
 ]);
 
 DB::init('localhost', 'tester', 'root', '');
