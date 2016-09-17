@@ -17,9 +17,9 @@ Method 2:
       
 Method 3:
     $query = new Sql\InsertInto('Product');
-	$query->column('title, price, name')
-    	  ->values('Shoes', 10.99, 'FooBar')
-      	  ->commit();
+	$query->column('title', 'price', 'name')
+		  ->values('Shoes', 10.99, 'FooBar')
+          ->commit();
           
 Method 4:
 	$query = new Sql\InsertInto('Product');
@@ -29,56 +29,42 @@ Method 4:
           
 Method 5:
 	$query = new Sql\InsertInto('Product');
-	$query->column('title, price, name')
-    	  ->values(array(
-          		'Shoes', 10.99, 'FooBar'
-            ))->commit();
-            
-Method 6:
-	$query = new Sql\InsertInto('Product');
-	$query->column(array(
-    		'title, price, name'
-        ))->values('Shoes', 10.99, 'FooBar')
-          ->commit();            	
- 
- Method 5:
-	$query = new Sql\InsertInto('Product');
-	$query->column(array(
-    		'title, price, name'
-        ))->values(array(
-          	'Shoes', 10.99, 'FooBar'
-        ))->commit(); 
+	$query->values('email', 'Foo@bar.om')
+    	  ->commit();
         
  Method 6:
 	$query = new Sql\InsertInto('Product');
-	$query->json('{
-        "title": "Shoes",
-        "price": 10.99,
-        "name": "FooBar"
-    }')->commit(); 
+	$query->json('
+        {
+            "title": "Shoes",
+            "price": 10.99,
+            "name": "FooBar"
+        }'
+    )->commit(); 
  	
     //Or as a file
 	$query = new Sql\InsertInto('Product');
 	$query->json('myjsonDataFile.json', true)
     	  ->commit();  
  
- Method 6:
+ Method 7:
     $query = new Sql\InsertInto('Shop');
-    $query->column('fname, lname, price')
-          ->Select('title, name, price')
-          ->from('Product')
-          ->where('id', 2);
+    $query->column('fname', 'lname', 'price')
+           ->Select('count')
+           ->from('Product')
+	  	   ->where('name', 'Bar')
+	  	   ->orWhere('title', 'Shoes')
+		   ->fallBack()
+		   ->commit();
           
-          
-     //Or
-     
-     $query = new Sql\InsertInto('Shop');
-	 $query->column('fname, lname, price')
-	  	   ->String('SELECT `title`, `price`, `name` FROM Product WHERE `id` = 2');
-      
-     //note this ->commit or ->toString will run the Select::commit or Select::toString
-     
-     $query->commit();
+
+Method 8:
+    $query = new Sql\InsertInto('Shop');
+    $query->column('fname', 'lname', 'price')
+          ->Query('SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname')
+		  ->setToken([':wname' => 'Foo'])
+		  ->fallBack()
+          ->commit();
  
  SELECT
  ----------------------------------------------------------------------------------------------------
@@ -94,19 +80,19 @@ Method 2:
 Method 3:
 	$query = new Sql\Select('title, price, name');
 	$query->from('Product')
-	  	  ->where('name',  'Bar')
+	  	  ->where('name', 'Bar')
           ->commit();
  
-Method 1:
+Method 4:
 	$query = new Sql\Select('count');
 	$query->from('Product')->commit();
 
 
-Method 2:
+Method 5:
 	$query = new Sql\Select(['title', 'price', 'count:name']);
 	$query->from('Product')->commit();        
            
-Method 4:
+Method 6:
 	$query = new Sql\Select('title, price, name');
 	$query->from('Product')
 	  	  ->where(['name' => 'Bar', 'title' => 'Shoes'])
@@ -135,7 +121,7 @@ Method 4:
 	  	  ->orWhere('title', 'Shoes')
           ->commit();      
 
-Method 5:
+Method 7:
     $query = new Sql\Select('title, price, name');
     $query->from('Product')
           ->where('name', 'Bar')
@@ -144,20 +130,29 @@ Method 5:
           ->order('id')
           ->limit(4)
           ->commit();
+     
+     
+    $query = new Sql\Select();
+    $query->from('Product')
+          ->where('price')
+          ->between(100, 220)
+          ->commit()
           
      $query = new Sql\Select();
      $query->from('Product')
 	      ->where('price')
 	      ->between(100, 220)
-	      ->order('abs:key');
+	      ->order('abs:key')
+          ->commit();
 	      
 	 
-	 $query = new Sql\Select();
+	$query = new Sql\Select();
     $query->from('Product')
     	  ->where('price')
     	  ->between(100, 220)
-    	  ->order('count');
-Method 7:
+    	  ->order('count')
+          ->commit();
+Method 8:
 
     class myObject
     {
@@ -203,27 +198,20 @@ Method 7:
  
  
      
- Method 8:
+ Method 9:
     $query = new Sql\Select('*');
 	$query->from('Product')
 	      ->where(['id' => 10, 'group' => 5], 'AND', '>,<')
           ->commit();
           
           
- Method 9:
+ Method 10:
     $query = new Sql\Select('*');
 	$query->distinct()
     	  ->from('Product')
-          ->commit();  
-          
-    //OR --- 
-    
-    $query = new Sql\Select('*');
-    $query->distinct = true;
-	$query->from('Product')
           ->commit();    
           
-  Method 10:
+  Method 11:
   
   	//does not use global db or autofix
     $query = new Sql\Select();
@@ -238,35 +226,30 @@ Method 7:
           ->from('Product')
           ->where('id', 3)
           ->commit()
-            
- Method 11:
-    $query = new Sql\Select();
-    $query->from('Product')
-          ->where('price')
-          ->between(100, 220)
-          ->commit()
+                   
           
-          
- Method 12:          
-    $query = new Sql\Select('table.name as user, table.user as:usename');
+ Method 14:          
+    $query = new Sql\Select('table.name as t1, table.user as:t2');
     $query->from('Product')
     	  ->where('price')
     	  ->between(100, 220)
           ->commit();
-          
-  Method 13:          
-	Select::find_name('foo')->commit();
    
    
-  Method 14:          
-   	 Select::find_or_name('foo', 'Bar')->commit();
-     
-     
- Method 14:          
-   	 Select::find_or_name('foo', 'Bar')->count();     
-   
-   
+   //note method 15,16 and 17 must have DB::setTable('Product');      
   Method 15:          
+	Sql\Select::find_name('foo')->commit();
+   
+   
+  Method 16:          
+   	 Sql\Select::find_or_name('foo', 'Bar')->commit();
+     
+     
+ Method 17:          
+   	Sql\Select::find_or_name('foo', 'Bar')->count();     
+   
+   
+  Method 18:          
     class myObject
     {
         public $title = null;
@@ -355,14 +338,63 @@ Method 3:
  QUERY
  ----------------------------------------------------------------------------------------------------
  Method 1:
-    $query = new Sql\String('SELECT `title`, `price`, `name` FROM Product WHERE `name` = \'Foo\'');
+    $query = new Sql\Query('SELECT `title`, `price`, `name` FROM Product WHERE `name` = \'Foo\'');
     $query->commit('fetchAll(PDO::FETCH_ASSOC)');
     
+   
+   
+     
+Method 3:
+    $query = new Sql\Query('SELECT `title`, `price`, `name` FROM Product WHERE `id` = 1');
+    //(stm) returns active query object (fast)
+    $query->commit('stm')->fetchAll(PDO::FETCH_OBJ);
     
+    //or
+    
+    $query = new Sql\Query('SELECT `title`, `price`, `name` FROM Product WHERE `id` = 1');
+    $query->commit('fetchAll(PDO::FETCH_OBJ)');
+    
+    //Note $query->commit('fetchAll(PDO::FETCH_OBJ)', true); 
+    	will pervent 'PDO::FETCH_OBJ' from being casted as constant hence leaving u with somethin like:
+    	$query->commit('fetchAll('PDO::FETCH_OBJ')');
+    
+    
+Method 4:
+    $query = new Sql\Query('INSERT INTO Product (`title`, `price`, `name`) VALUES (\'Shoes\', 10.99, \'FooBar\')');
+    //(pdo) returns active connection object
+    $query->commit('pdo')->lastInsertId(); //returns last inserted id (fast)
+    //or
+    	$query->commit('lastInsertId())');
+    
+     
  Method 2:
-    $query = new Sql\String('SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname');
+    $query = new Sql\Query('SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname');
 	$query->col_and_val = array(':wname' => 'Foo');
+    $query->commit('fetchAll(PDO::FETCH_OBJ)');
+    
+    //or
+    
+    $query = new Sql\Query('SELECT `title`, `price`, `name` FROM Product WHERE `name` = :wname');
+	$query->setToken(array(':wname' => 'Foo'));
     $query->commit('fetchAll(PDO::FETCH_OBJ)');
     
     //can pass anything that is not constant as a 2nd arg
     //eg $query->commit('someMethod', arrar(data));
+  
+
+    
+    
+FIND
+ ----------------------------------------------------------------------------------------------------
+ Method 1:
+    //find all in product where name == Foo
+    Sql\Find::Product_name('Foo')->commit()
+    
+    //find price in product where name == Foo
+    Sql\Find::Product_name('Foo', 'price')->commit()
+    
+    //count  all columns in product where name == Foo
+    Sql\Find::Product_name('Foo', 'count')->commit()
+    
+    //count name columns in product where name == Foo
+    Sql\Find::Product_name('Foo', 'count:name')->commit() // 'COUNT(name)'

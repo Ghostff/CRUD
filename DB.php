@@ -249,6 +249,30 @@ namespace Auxiliary {
             }
             return $statement;
         }
+        
+        public static function makeQueryFunc($keyword, $column)
+        {
+            $pattern = sprintf('/^(%1$s)\:(.*)|(%1$s)\((.*)\)|(%1$s)$/i', $keyword);
+            if (preg_match($pattern, $column, $matched)) {
+                
+                $matched = array_values(array_filter($matched));
+                
+                $count = null;
+                $clause = null;
+                
+                if (isset($matched[2])) {
+                    $count = trim($matched[2]);
+                }
+                else {
+                    $count = '*';
+                }
+                
+                $clause = strtoupper($matched[1]);
+                
+               return sprintf('%s(%s)', $clause, $count);
+            }
+            return false;
+        }
     }
 }
 
@@ -273,6 +297,8 @@ namespace Sql {
         public $col_and_val = array();
         
         public $count = 0;
+		
+		public $fall_back = null;
         
         private function modifyColumn($columns)
         {
@@ -291,9 +317,6 @@ namespace Sql {
                 }
                 else {
                     
-                    $keyword = 'count|sum';
-                    $pattern = sprintf('/^(%1$s)\:(.*)|(%1$s)\((.*)\)|(%1$s)$/i', $keyword);
-                    
                     $asPathern = '/as:(.*)\s*|as (.*)\s*/i';
                     if (preg_match($asPathern, $column, $matched)) {
                         
@@ -301,31 +324,17 @@ namespace Sql {
                         $column = str_replace($matched[0], 'AS ' . $matched[1], $column);
                         
                     }
-                    
-                    if (preg_match($pattern, $column, $matched)) {
-                        
-                        $matched = array_values(array_filter($matched));
-                        
-                        $count = null;
-                        $clause = null;
-                        
-                        if (isset($matched[2])) {
-                            $count = trim($matched[2]);
-                        }
-                        else {
-                            $count = '*';
-                        }
-                        
-                        $clause = strtoupper($matched[1]);
-                        
-                        $new_column .= sprintf('%s(%s)', $clause, $count);
+
+                    if ($match = Auxi::makeQueryFunc('count|sum', $column)) {
+                        $new_column .= $match;
                     }
                     elseif (strpos($column, '.') !== false) {
-                        
+                    
                         $pattern = '/(.*)\.(\w+)\s*(.*)/i';
                         if (preg_match($pattern, $column, $matched)) {
-                            $new_column .= sprintf('%s.`%s`, ', $matched[1], $matched[2]);
+                            @$new_column .= sprintf('%s.`%s` %s, ', $matched[1], $matched[2], $matched[3]);
                         }
+                        
                     }
                     else {
                         $new_column .= sprintf('`%s`, ', $column);
@@ -396,12 +405,16 @@ namespace Sql {
                 $this->__construct($arguments[0]);
                 return $this;
             }
+			elseif ($name == 'fallBack') {
+                return $this->fall_back;
+            }
         }
         
         public function union($type = null)
         {
             if ($type) {
                 $type = strtoupper($type) . ' ';    
+
             }
             
             $this->buildQuery();
@@ -477,20 +490,27 @@ namespace Sql {
             return $this;
         }
         
-        public function order($columnName, $orderType = 'ASC')
+        public function order($columnName, $orderType = null)
         {
+            if ($columnName == 'rand') {
+                $columnName = 'RAND()';
+            }
+            elseif ($columnName == '`rand`') {
+                $columnName = 'rand';
+            }
+            elseif ($match = Auxi::makeQueryFunc('abs', $columnName)) {
+                $columnName = $match;
+            }
+            
             $this->auto_fix['order'] = $columnName . ' ' . $orderType;
-            $this->query .= 'ORDER BY ' . $this->auto_fix['order'];
+            $this->query .= ' ORDER BY ' . $this->auto_fix['order'];
             return $this;
         }
-		
-		public function group($group)
-		{
-		}
+        
         public function limit($limit)
         {
             $this->auto_fix['limit'] = $limit;
-            $this->query .= ' LIMIT ' . $limit;
+            $this->query .= 'LIMIT ' . $limit;
             return $this;
         }
         
@@ -574,7 +594,7 @@ namespace Sql {
             if ( (DB::$auto_fix && ! $this->built) || $this->query ) {
                 $this->buildQuery();    
             }
-            
+						
             try {
                 $query = DB::$conn->prepare($this->built);
                 if ($query->execute($this->col_and_val)) {
@@ -692,7 +712,8 @@ namespace Sql {
                     $arguments[1] = null;
                 }
                 $refrence =  new $classNamespace($arguments[0], $arguments[1]);
-                $refrence->called = array('init');
+				
+				$refrence->fall_back = &$this;
                 $this->instantiated = $refrence;
                 return $refrence;
             }
@@ -709,9 +730,11 @@ namespace Sql {
                 if ( ! is_array($name)) {
                     $name = func_get_args();
                 }
+				
                 foreach ($name as $key => $value) {
                     $this->col_and_val[':i' . $this->columns[$key]] = $value;
                 }
+
                 $this->last_was_col = false;
             }
             elseif ( ! $this->col_and_val) {
@@ -742,12 +765,12 @@ namespace Sql {
         public function column($columnNames)
         {
             $this->last_was_col = true;
+			
             if (is_array($columnNames)) {
                 $this->columns = $columnNames;
             }
             else {
-                $this->columns = str_replace(' ', '', $columnNames);
-                $this->columns = explode(',', $this->columns);
+				$this->columns = array_map('trim', func_get_args());
             }
             return $this;
         }
@@ -974,21 +997,27 @@ namespace Sql {
             $this->table = $tableName;
         }
         
-        public function where($name, $value = null)
+        public function where($name, $value = null, $condition = '=', $const = null)
         {
-            \Auxiliary\Methods::where($name, $value, $this);
+            $this->where .= Auxi::where(
+                $name, $value, $condition, $this, $const
+            );
             return $this;
         }
         
-        public function andWhere($name, $value)
+        public function andWhere($name, $value, $condition = '=')
         {
-            \Auxiliary\Methods::andWhere($name, $value, $this);
+            $this->where .= ' AND ' .  Auxi::where(
+				$name, $value, $condition, $this
+			);
             return $this;
         }
         
-        public function orWhere($name, $value)
+        public function orWhere($name, $value, $condition = '=')
         {
-            \Auxiliary\Methods::orWhere($name, $value, $this);
+            $this->where .= ' OR ' . Auxi::where(
+				$name, $value, $condition, $this
+			);
             return $this;
         }
                 
@@ -1037,19 +1066,15 @@ namespace Sql {
     class Query
     {
         public $col_and_val = null;
+		
         private $built = null;
+		
         public $called = array();
+		
         private $instantiated = null;
+		
+		public $fall_back = null;
         
-        
-        public function toString($forQuery = false)
-        {
-            return \Auxiliary\Methods::Stringfy(
-                $this->built,
-                $this->col_and_val,
-                $forQuery
-            );
-        }
         
         private function buildQuery()
         {    
@@ -1065,11 +1090,33 @@ namespace Sql {
             $this->built = $query;
         }
         
+		public function toString($forQuery = false)
+        {
+            return \Auxiliary\Methods::Stringfy(
+                $this->built,
+                $this->col_and_val,
+                $forQuery
+            );
+        }
+		
         public function __construct($queryString)
         {
             $this->built = $queryString;
         }
         
+		public function __call($name, $arg)
+		{
+			if ($name == 'fallBack') {
+                return $this->fall_back;
+            }
+		}
+		
+		public function setToken($bind_token = array())
+		{
+			$this->col_and_val = $bind_token;
+			return $this;
+		}
+		
         public function commit($method = null, $casting = false)
         {
             if (! $this->built) {
@@ -1078,9 +1125,16 @@ namespace Sql {
             
             try {
                 $query = DB::$conn->prepare($this->built);
-
-                if ($query->execute($this->col_and_val)) {
-                    if ($method) {
+				
+                if ($query->execute($this->col_and_val))
+				{
+					if ($method == 'pdo') {
+						return DB::$conn;
+					}
+					elseif ($method == 'stm') {
+						return $query;
+					}
+                    elseif ($method) {
                         $argument = null;
                         if (strpos($method, '(') !== false) {
                             list($method, $argument) = explode('(', rtrim($method, ')'));                                        
@@ -1095,7 +1149,7 @@ namespace Sql {
                             }
                         }
                         elseif (method_exists(DB::$conn, $method)) {
-                            if ( ! $castiing) {
+                            if ( ! $casting) {
                                 return DB::$conn->{$method}(@constant($argument));
                             }
                             else {
@@ -1114,5 +1168,19 @@ namespace Sql {
             }
         }
     }
+	
+	class Find
+	{
+		public static function __callStatic($name, $arg)
+		{
+			DB::setTable(null);
+			list($table, $column) = explode('_', $name);
+			$query = new Select(isset($arg[1]) ? $arg[1] : '*');
+    		$query->from($table)
+				  ->where($column, $arg[0]);
+				  
+			return $query;
+		}
+	}
     
 }
