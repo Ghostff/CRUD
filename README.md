@@ -16,6 +16,11 @@ SELECT METHODS
     $query = new Sql\Select('title, price, name');
     $query->from('Product')->commit();
 ```   
+Similarly:
+```php
+	 Sql\Find::Product_name('Foo')->commit();
+	 //select * from Product where name = Foo
+```
 
 UPDATE METHODS
 -------
@@ -36,8 +41,8 @@ DELETE METHODS
 QUERY METHODS
 -------
 ```php
-$query = new Sql\InsertInto('Shop');
-$query->Query('SELECT * FROM Product WHERE `name` = \'Foo\'')
+$query = new Sql\Query('SELECT * FROM Product WHERE `name` = \'Foo\'')
       ->commit();
 ```    
+
 
