@@ -14,7 +14,7 @@ class Test
 		$imagine = preg_replace(array('/\s+/', '/\s*Data:/'), array(' ', 'Data:'), trim($imagine));
 		$imagine = str_replace('\s', ' ', $imagine);
 		
-		//var_dump(strip_tags($test), $imagine);
+		#var_dump(strip_tags($test), $imagine);
 		
 		if ( $imagine == strip_tags($test)) {
 			echo sprintf(

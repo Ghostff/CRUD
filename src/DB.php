@@ -510,7 +510,7 @@ namespace Sql {
         public function limit($limit)
         {
             $this->auto_fix['limit'] = $limit;
-            $this->query .= 'LIMIT ' . $limit;
+            $this->query .= ' LIMIT ' . $limit;
             return $this;
         }
         
@@ -574,6 +574,8 @@ namespace Sql {
             else {
                 $this->built = $this->query;    
             }
+            
+            $this->built = preg_replace('/\s+/', ' ', $this->built);
         }
         
         public function toString($forQuery = false)
@@ -641,7 +643,7 @@ namespace Sql {
                             }
                             return $result;    
                         }
-                        elseif ($from == 'count') {
+                        elseif ($from === 'count') {
                             return $this->count;
                         }
                         else {
@@ -812,7 +814,7 @@ namespace Sql {
             if ($this->duplicate) {
                 $query .= ' ON DUPLICATE KEY UPDATE' . $this->duplicate;
             }
-            $this->built = $query;
+            $this->built = preg_replace('/\s+/', ' ', $query);
         }
         
         public function toString($forQuery = false)
@@ -943,7 +945,7 @@ namespace Sql {
                 $query .= ' WHERE ' . $this->where;
             }
             
-            $this->built = $query;
+            $this->built = preg_replace('/\s+/', ' ', $query);
         }
         
         public function toString($forQuery = false)
@@ -1028,7 +1030,7 @@ namespace Sql {
                 $query .= ' WHERE ' . $this->where;
             }
             
-            $this->built = $query;
+            $this->built = preg_replace('/\s+/', ' ', $query);
         }
         
         public function toString($forQuery = false)
@@ -1087,7 +1089,7 @@ namespace Sql {
                     'query'     => $query
                 );
             }
-            $this->built = $query;
+            $this->built = preg_replace('/\s+/', ' ', $query);
         }
         
         public function toString($forQuery = false)
@@ -1174,10 +1176,13 @@ namespace Sql {
         public static function __callStatic($name, $arg)
         {
             DB::setTable(null);
-            list($table, $column) = explode('_', $name);
+            preg_match('/([\w][a-z0-9]+)_(\w+)/', $name, $matched);
+            list(, $table, $column) = $matched;
+            
             $query = new Select(isset($arg[1]) ? $arg[1] : '*');
             $query->from($table)
-                  ->where($column, $arg[0]);
+                  ->where($column, $arg[0])
+                  ->limit(1);
                   
             return $query;
         }

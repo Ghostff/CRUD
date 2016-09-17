@@ -1,7 +1,7 @@
 <?php
 
 require 'Test.php';
-require '../DB.php';
+require '../src/DB.php';
 
 class DBTest extends Test
 {
@@ -402,6 +402,53 @@ class DBTest extends Test
 			'
 		);
 		
+		$expected = '
+			Query: SELECT * FROM Product FROM Product WHERE `p_pid` = :wp_pid ORDER BY id asc
+			Data: {":wp_pid":10}
+		';
+		
+		$this->name = 'Method 18';
+		$this->imagine(
+			$expected,
+			'	$query = new Sql\Select();
+				$test = $query->from(\'Product\')
+							->where(\'p_pid\', 10)
+							->order(\'id\', \'asc\')
+							->toString();
+			'
+		);
+		
+		$expected = '
+			Query: SELECT * FROM Product FROM Product WHERE `p_pid` = :wp_pid LIMIT 3
+			Data: {":wp_pid":10}
+		';
+		$this->name = 'Method 19';
+		$this->imagine(
+			$expected,
+			'	$query = new Sql\Select();
+				$test = $query->from(\'Product\')
+							->where(\'p_pid\', 10)
+							->limit(3)
+							->toString();
+			'
+		);
+		
+		$expected = '
+			Query: SELECT * FROM Product FROM Product WHERE `p_pid` = :wp_pid ORDER BY id asc LIMIT 3
+			Data: {":wp_pid":10}
+		';
+		$this->name = 'Method 20';
+		$this->imagine(
+			$expected,
+			'	$query = new Sql\Select();
+				$test = $query->from(\'Product\')
+							->where(\'p_pid\', 10)
+							->order(\'id\', \'asc\')
+							->limit(3)
+							->toString();
+			'
+		);
+		
 	}
 	
 	public function _test_Update_instantces()
@@ -579,7 +626,7 @@ class DBTest extends Test
 	{
 		$this->name = 'Method 1';
 		$expected = '
-			Query: SELECT * FROM Product WHERE `name` = :wname
+			Query: SELECT * FROM Product WHERE `name` = :wname LIMIT 1
 			Data: {":wname":"Foo"}
 		';
 		$this->imagine(
@@ -591,7 +638,7 @@ class DBTest extends Test
 		
 		$this->name = 'Method 2';
 		$expected = '
-			Query: SELECT COUNT(*) FROM Product WHERE `name` = :wname
+			Query: SELECT COUNT(*) FROM Product WHERE `name` = :wname LIMIT 1
 			Data: {":wname":"Foo"}
 		';
 		$this->imagine(
@@ -603,7 +650,7 @@ class DBTest extends Test
 		
 		$this->name = 'Method 3';
 		$expected = '
-			Query: SELECT COUNT(name) FROM Product WHERE `name` = :wname
+			Query: SELECT COUNT(name) FROM Product WHERE `name` = :wname LIMIT 1
 			Data: {":wname":"Foo"}
 		';
 		$this->imagine(
