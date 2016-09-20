@@ -250,9 +250,19 @@ namespace Auxiliary {
             return $statement;
         }
         
-        public static function makeQueryFunc($keyword, $column)
+        public static function makeQueryFunc($column, $keyword = null)
         {
-            $pattern = sprintf('/^(%1$s)\:(.*)|(%1$s)\((.*)\)|(%1$s)$/i', $keyword);
+            
+            if ($keyword) {
+                $pattern = sprintf(
+                    '/^(%1$s)\:(.*)|(%1$s)\((.*)\)|(%1$s)$/i', 
+                    $keyword
+                );
+            }
+            else {
+                $pattern = '/^(\w+)\:(.*)|(\w+)\((.*)\)$/i';
+            }
+            
             if (preg_match($pattern, $column, $matched)) {
                 
                 $matched = array_values(array_filter($matched));
@@ -271,6 +281,7 @@ namespace Auxiliary {
                 
                return sprintf('%s(%s)', $clause, $count);
             }
+            
             return false;
         }
     }
@@ -325,7 +336,7 @@ namespace Sql {
                         
                     }
 
-                    if ($match = Auxi::makeQueryFunc('count|sum', $column)) {
+                    if ($match = Auxi::makeQueryFunc($column)) {
                         $new_column .= $match;
                     }
                     elseif (strpos($column, '.') !== false) {
@@ -449,6 +460,13 @@ namespace Sql {
         {
             $this->auto_fix['from'] = $tableNames;
             $this->query .= ' FROM ' . $tableNames;
+            
+            if (preg_match('/FROM (\w+) FROM (\w+)/', $this->query)) {
+                throw new \Exception('
+                    You can\'t call the method from(...) because you
+                    already set a global table with DB::setTable(...)'
+                );
+            }
             return $this;
         }
         
@@ -461,6 +479,14 @@ namespace Sql {
         
         public function where($name, $value = null, $condition = '=', $const = null)
         {
+            if (DB::$auto_fix == true) {
+                if ( is_string($name) && ! $value) {
+                    throw new \Exception(sprintf('
+                        No value assigned to %1$s ->where(\'%1$s\', [required_value])',
+                        $name
+                    ));    
+                }
+            }
             $this->auto_fix['where'] = Auxi::where(
                 $name, $value, $condition, $this, $const
             );
@@ -498,13 +524,55 @@ namespace Sql {
             elseif ($columnName == '`rand`') {
                 $columnName = 'rand';
             }
-            elseif ($match = Auxi::makeQueryFunc('abs', $columnName)) {
+            elseif ($match = Auxi::makeQueryFunc($columnName)) {
                 $columnName = $match;
             }
             
             $this->auto_fix['order'] = $columnName . ' ' . $orderType;
             $this->query .= ' ORDER BY ' . $this->auto_fix['order'];
             return $this;
+        }
+        
+        public function group()
+        {
+            $grouping = null;
+            foreach (func_get_args() as $value) {
+                
+                $grouped = Auxi::makeQueryFunc($value);
+                
+                if ( ! $grouped) {
+                    $grouping .= $value;
+                }
+                else {
+                    $grouping .= $grouped;
+                }
+                
+                $grouping .= ', ';
+            }
+            
+            $grouping = rtrim($grouping, ', ');
+
+            $this->auto_fix['group'] = $grouping;
+            $this->query .= ' GROUP BY ' . $grouping;
+            return $this;
+        }
+        
+        public function have($have, $value = null, $operator  = null)
+        {
+            $grouping = null;
+            foreach (func_get_args() as $value) {
+                
+                $grouped = Auxi::makeQueryFunc($value);
+                
+                if ( ! $grouped) {
+                    $grouping .= $value;
+                }
+                else {
+                    $grouping .= $grouped;
+                }
+                
+                $grouping .= ', ';
+            }
         }
         
         public function limit($limit)
@@ -560,6 +628,14 @@ namespace Sql {
                 if (isset($this->auto_fix['orwhere'])) {
                     $new_query .= ' OR ' . $this->auto_fix['orwhere'];
                 }
+
+                if (isset($this->auto_fix['group'])) {
+                    $new_query .= ' GROUP BY ' . $this->auto_fix['group'];
+                }
+                
+                if (isset($this->auto_fix['have'])) {
+                    $new_query .= ' HAVING ' . $this->auto_fix['have'];
+                }
                 
                 if (isset($this->auto_fix['limit'])) {
                     $new_query .= ' LIMIT ' . $this->auto_fix['limit'];
@@ -574,8 +650,8 @@ namespace Sql {
             else {
                 $this->built = $this->query;    
             }
-			
-			$this->built = preg_replace('/\s+/', ' ', $this->built);
+            
+            $this->built = preg_replace('/\s+/', ' ', $this->built);
         }
         
         public function toString($forQuery = false)
@@ -1176,13 +1252,13 @@ namespace Sql {
         public static function __callStatic($name, $arg)
         {
             DB::setTable(null);
-			preg_match('/([\w][a-z0-9]+)_(\w+)/', $name, $matched);
+            preg_match('/([\w][a-z0-9]+)_(\w+)/', $name, $matched);
             list(, $table, $column) = $matched;
-			
+            
             $query = new Select(isset($arg[1]) ? $arg[1] : '*');
             $query->from($table)
                   ->where($column, $arg[0])
-				  ->limit(1);
+                  ->limit(1);
                   
             return $query;
         }
