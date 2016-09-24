@@ -270,15 +270,29 @@ Method 18:
 	query->from('Product')
     	 ->where('price', 10.99)
     	 ->group('id')
-         ->toString();  
+         ->commit();  
 		 
 		 
 	$query = new Sql\Select('title);
 	query->from('Product')
     	 ->where('price', 10.99)
     	 ->group('id', 'floor:price*2) //or floor(price*2)
-         ->toString();  
-      
+         ->commit();  
+ 
+  Method 19:          
+	$query = new Sql\Select('name');
+	$query->from('Product')
+		  ->where('price',22)
+		  ->group('id')
+		  ->have(['name' => 'foo', 'total' => 1500], 'OR', ',<') //',<' is same as '=,<'
+		  ->commit(); 
+		  
+		  
+	$query = new Sql\Select('name');
+	$query->from('Product')
+		  ->group('id')
+		  ->have('name', 'foo')
+		  ->commit();   
                         
  UPDATE
  ----------------------------------------------------------------------------------------------------
