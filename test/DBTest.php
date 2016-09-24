@@ -295,7 +295,7 @@ class DBTest extends Test
 		
 		$this->name = 12;
 		$expected = '
-			Query: SELECT `title`, `price`, `name` FROM Product WHERE `id` > :wid AND `group` = :wgroup
+			Query: SELECT `title`, `price`, `name` FROM Product WHERE `id` > :wid AND `group` < :wgroup
 			Data: {":wid":10,":wgroup":5}
 		';
 		$this->imagine(
@@ -458,7 +458,7 @@ class DBTest extends Test
 		
 		$this->name = 21;
 		$expected = '
-			Query: SELECT MAX(*) FROM Product WHERE `price` = :wprice GROUP BY id
+			Query: SELECT MAX(*) FROM Product WHERE `price` >= :wprice GROUP BY id
 			Data: {":wprice":10.99}
 		';
 		
@@ -467,7 +467,7 @@ class DBTest extends Test
 			'
 				$query = new Sql\Select(\'max:*\');
 				$t = $query->from(\'Product\')
-					   ->where(\'price\', 10.99)
+					   ->where(\'price\', 10.99, \'>=\')
 					   ->group(\'id\')
 					   ->toString();
 			'
@@ -487,8 +487,45 @@ class DBTest extends Test
 					   ->where(\'price\', 10.99)
 					   ->group(\'id\', \'floor:price*2\')
 					   ->toString();
-			',1
+			'
 		);
+		
+		$this->name = 23;
+		$expected = '
+			Query: SELECT * FROM Product WHERE `price` = :wprice GROUP BY id HAVING `name` = :wname OR `total` < :wtotal
+			Data: {":wprice":10.99,":wname":"foo",":wtotal":1500}
+		';
+		
+		$this->imagine(
+			$expected,
+			'
+				$query = new Sql\Select();
+				$t = $query->from(\'Product\')
+					   ->where(\'price\', 10.99)
+					   ->group(\'id\')
+					   ->have([\'name\' => \'foo\', \'total\' => 1500], \'OR\', \',<\')
+					   ->toString();
+			'
+		);
+		
+		$this->name = 24;
+		$expected = '
+			Query: SELECT product.`name` AS names FROM Product WHERE `price` = :wprice GROUP BY id HAVING `name` = :wname
+			Data: {":wprice":10.99,":wname":"foo"}
+		';
+		
+		$this->imagine(
+			$expected,
+			'
+				$query = new Sql\Select(\'product.name as names\');
+				$t = $query->from(\'Product\')
+					   ->where(\'price\', 10.99)
+					   ->group(\'id\')
+					   ->have(\'name\', \'foo\')
+					   ->toString();
+			'
+		);
+		
 		
 		
 		

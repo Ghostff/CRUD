@@ -222,22 +222,22 @@ namespace Auxiliary {
                 $data = array_map(
                     function ($name, $value)
                     use ($opperator, $class, $condition, &$statement, &$key, $const) {
-                        
+
                         if ($const && is_numeric($name)) {
                             $name = $const;
                         }
                         
                         if (isset($condition[$key])) {
-                            $condition = trim($condition[$key]);
+                            $condition = trim($condition[$key]) ?: '=';
                         } else {
                             $condition = '=';
                         }
                         
                         //$statement  = `columnName` (=|>|<..) :wcolumnName (AND|OR..)
-                        $key = 'w' . $name;
-                        static::uniqueKey($key, $class->col_and_val, $value);
+                        $uniq_key = 'w' . $name;
+                        static::uniqueKey($uniq_key, $class->col_and_val, $value);
                         $statement .= sprintf(
-                            '`%s` %s :%s %s ', $name, $condition, $key, $opperator
+                            '`%s` %s :%s %s ', $name, $condition, $uniq_key, $opperator
                         );
                         $key++;
                         
@@ -551,28 +551,28 @@ namespace Sql {
             }
             
             $grouping = rtrim($grouping, ', ');
-
+			
             $this->auto_fix['group'] = $grouping;
             $this->query .= ' GROUP BY ' . $grouping;
             return $this;
         }
         
-        public function have($have, $value = null, $operator  = null)
+        public function have($name, $value = null, $condition = '=', $const = null)
         {
-            $grouping = null;
-            foreach (func_get_args() as $value) {
-                
-                $grouped = Auxi::makeQueryFunc($value);
-                
-                if ( ! $grouped) {
-                    $grouping .= $value;
+            if (DB::$auto_fix == true) {
+                if ( is_string($name) && ! $value) {
+                    throw new \Exception(sprintf('
+                        No value assigned to %1$s ->group(\'%1$s\', [required_value])',
+                        $name
+                    ));    
                 }
-                else {
-                    $grouping .= $grouped;
-                }
-                
-                $grouping .= ', ';
             }
+
+            $this->auto_fix['have'] = Auxi::where(
+                $name, $value, $condition, $this, $const
+            );
+            $this->query .= ' HAVING ' . $this->auto_fix['have'];
+            return $this;
         }
         
         public function limit($limit)
@@ -636,7 +636,11 @@ namespace Sql {
                 if (isset($this->auto_fix['have'])) {
                     $new_query .= ' HAVING ' . $this->auto_fix['have'];
                 }
-                
+				
+                if (isset($this->auto_fix['order'])) {
+                    $new_query .= ' ORDER BY ' . $this->auto_fix['order'];
+                }
+				
                 if (isset($this->auto_fix['limit'])) {
                     $new_query .= ' LIMIT ' . $this->auto_fix['limit'];
                 }
