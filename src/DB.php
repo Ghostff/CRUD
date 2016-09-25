@@ -252,7 +252,7 @@ namespace Auxiliary {
         
         public static function makeQueryFunc($column, $keyword = null)
         {
-            
+            var_dump($column);
             if ($keyword) {
                 $pattern = sprintf(
                     '/^(%1$s)\:(.*)|(%1$s)\((.*)\)|(%1$s)$/i', 
@@ -315,7 +315,7 @@ namespace Sql {
         {
             $new_column = null;
             if ( ! is_array($columns)) {
-                $columns = explode(',', $columns);
+                $columns = preg_split("/(?<!\'),/", $columns);
             }
             
             foreach ($columns as $column) {
@@ -337,7 +337,7 @@ namespace Sql {
                     }
 
                     if ($match = Auxi::makeQueryFunc($column)) {
-                        $new_column .= $match;
+                        $new_column .= $match . ', ';
                     }
                     elseif (strpos($column, '.') !== false) {
                     
@@ -368,7 +368,6 @@ namespace Sql {
         
         public function __construct($columnNames = '*', $map = null)
         {
-            
             $this->query .= 'SELECT ';
             $columnNames = $this->modifyColumn($columnNames);
             
