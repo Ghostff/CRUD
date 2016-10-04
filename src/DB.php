@@ -135,7 +135,10 @@ namespace PDOConnection {
             if (static::$force_DB) {
                 $pdo->query('CREATE DATABASE IF NOT EXISTS ' . $DBName);
             }
-            $pdo->query('USE ' . $DBName);
+			
+            if ($DBName) {
+            	$pdo->query('USE ' . $DBName);
+			}
             static::$conn = $pdo;
         }
         
