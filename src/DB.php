@@ -135,10 +135,10 @@ namespace PDOConnection {
             if (static::$force_DB) {
                 $pdo->query('CREATE DATABASE IF NOT EXISTS ' . $DBName);
             }
-			
+            
             if ($DBName) {
-            	$pdo->query('USE ' . $DBName);
-			}
+                $pdo->query('USE ' . $DBName);
+            }
             static::$conn = $pdo;
         }
         
@@ -553,7 +553,7 @@ namespace Sql {
             }
             
             $grouping = rtrim($grouping, ', ');
-			
+            
             $this->auto_fix['group'] = $grouping;
             $this->query .= ' GROUP BY ' . $grouping;
             return $this;
@@ -638,11 +638,11 @@ namespace Sql {
                 if (isset($this->auto_fix['have'])) {
                     $new_query .= ' HAVING ' . $this->auto_fix['have'];
                 }
-				
+                
                 if (isset($this->auto_fix['order'])) {
                     $new_query .= ' ORDER BY ' . $this->auto_fix['order'];
                 }
-				
+                
                 if (isset($this->auto_fix['limit'])) {
                     $new_query .= ' LIMIT ' . $this->auto_fix['limit'];
                 }
@@ -1208,7 +1208,7 @@ namespace Sql {
             }
             
             try {
-                $query = DB::$conn->prepare($this->built);
+                $query = DB::$conn->query($this->built);
                 
                 if ($query->execute($this->col_and_val))
                 {
