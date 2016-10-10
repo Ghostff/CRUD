@@ -121,13 +121,20 @@ namespace PDOConnection {
         * initialize a new PDO connection
         * return null
         *
-        * @param database host name
+        * @param database host name or array of @param 1, 2, 3, 4
         * @parma database name
         * @param database username
         * @param databse password
         */
         public static function init($host, $DBName, $username, $password)
         {
+            if (is_array($host)) {
+                $username = $host['username'] ?? '';
+                $password = $host['password'] ?? '';
+                $DBName   = $host['database'] ?? '';
+                $host     = $host['host'] ?? '';
+            }
+            
             $pdo = new PDO('mysql:host=' . $host, $username, $password);
             if (static::$debug) {
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
